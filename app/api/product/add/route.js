@@ -10,29 +10,36 @@ cloudinary.config({
 	api_key: process.env.CLOUDINARY_API_KEY,
 	api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
 export async function POST(request) {
 	try {
 		const { userId } = getAuth(request);
 		const isSeller = await authSeller(userId);
+
 		if (!isSeller) {
 			return NextResponse.json(
 				{ success: false, message: "Unauthorized" },
 				{ status: 403 }
 			);
 		}
+
 		const formData = await request.formData();
 		const name = formData.get("name");
 		const description = formData.get("description");
 		const category = formData.get("category");
 		const price = formData.get("price");
 		const offerPrice = formData.get("offerPrice");
+		const brand = formData.get("brand");
+		const color = formData.get("color"); // ✅ New color field
 		const files = formData.getAll("image");
+
 		if (!files || files.length === 0) {
 			return NextResponse.json(
 				{ success: false, message: "No images provided" },
 				{ status: 400 }
 			);
 		}
+
 		const result = await Promise.all(
 			files.map(async (file) => {
 				const arrayBuffer = await file.arrayBuffer();
@@ -41,19 +48,19 @@ export async function POST(request) {
 					const stream = cloudinary.uploader.upload_stream(
 						{ resource_type: "auto" },
 						(error, result) => {
-							if (error) {
-								reject(error);
-							} else {
-								resolve(result);
-							}
+							if (error) reject(error);
+							else resolve(result);
 						}
 					);
 					stream.end(buffer);
 				});
 			})
 		);
+
 		const image = result.map((res) => res.secure_url);
+
 		await connectDB();
+
 		const newProduct = await Product.create({
 			userId,
 			name,
@@ -61,9 +68,12 @@ export async function POST(request) {
 			category,
 			price: Number(price),
 			offerPrice: Number(offerPrice),
+			brand,
+			color, // ✅ Save color in DB
 			image,
 			date: Date.now(),
 		});
+
 		return NextResponse.json(
 			{ success: true, message: "Product created successfully", newProduct },
 			{ status: 201 }

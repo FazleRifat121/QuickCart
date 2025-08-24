@@ -14,6 +14,8 @@ const AddProduct = () => {
 	const [category, setCategory] = useState("Three Piece");
 	const [price, setPrice] = useState("");
 	const [offerPrice, setOfferPrice] = useState("");
+	const [brand, setBrand] = useState("");
+	const [color, setColor] = useState(""); // ✅ New state for color
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -23,9 +25,12 @@ const AddProduct = () => {
 		formData.append("category", category);
 		formData.append("price", price);
 		formData.append("offerPrice", offerPrice);
+		formData.append("brand", brand);
+		formData.append("color", color); // ✅ Append color
 		for (let i = 0; i < files.length; i++) {
 			formData.append("image", files[i]);
 		}
+
 		try {
 			const token = await getToken();
 			const { data } = await axios.post("/api/product/add", formData, {
@@ -34,7 +39,6 @@ const AddProduct = () => {
 				},
 			});
 			if (data.success) {
-				// Handle success
 				toast.success(data.message);
 				setFiles([]);
 				setName("");
@@ -42,6 +46,8 @@ const AddProduct = () => {
 				setCategory("Three Piece");
 				setPrice("");
 				setOfferPrice("");
+				setBrand("");
+				setColor(""); // ✅ Reset color
 			} else {
 				toast.error(data.message);
 			}
@@ -53,6 +59,7 @@ const AddProduct = () => {
 	return (
 		<div className="flex-1 min-h-screen flex flex-col justify-between">
 			<form onSubmit={handleSubmit} className="md:p-10 p-4 space-y-5 max-w-lg">
+				{/* Product Images */}
 				<div>
 					<p className="text-base font-medium">Product Image</p>
 					<div className="flex flex-wrap items-center gap-3 mt-2">
@@ -84,6 +91,8 @@ const AddProduct = () => {
 						))}
 					</div>
 				</div>
+
+				{/* Name & Description */}
 				<div className="flex flex-col gap-1 max-w-md">
 					<label className="text-base font-medium" htmlFor="product-name">
 						Product Name
@@ -98,6 +107,7 @@ const AddProduct = () => {
 						required
 					/>
 				</div>
+
 				<div className="flex flex-col gap-1 max-w-md">
 					<label
 						className="text-base font-medium"
@@ -113,9 +123,12 @@ const AddProduct = () => {
 						onChange={(e) => setDescription(e.target.value)}
 						value={description}
 						required
-					></textarea>
+					/>
 				</div>
+
+				{/* Category, Price, Offer Price, Brand, Color */}
 				<div className="flex items-center gap-5 flex-wrap">
+					{/* Category */}
 					<div className="flex flex-col gap-1 w-32">
 						<label className="text-base font-medium" htmlFor="category">
 							Category
@@ -136,6 +149,8 @@ const AddProduct = () => {
 							<option value="Accessories">Accessories</option>
 						</select>
 					</div>
+
+					{/* Price */}
 					<div className="flex flex-col gap-1 w-32">
 						<label className="text-base font-medium" htmlFor="product-price">
 							Product Price
@@ -150,6 +165,8 @@ const AddProduct = () => {
 							required
 						/>
 					</div>
+
+					{/* Offer Price */}
 					<div className="flex flex-col gap-1 w-32">
 						<label className="text-base font-medium" htmlFor="offer-price">
 							Offer Price
@@ -164,7 +181,38 @@ const AddProduct = () => {
 							required
 						/>
 					</div>
+
+					{/* Brand */}
+					<div className="flex flex-col gap-1 w-32">
+						<label className="text-base font-medium" htmlFor="brand">
+							Brand
+						</label>
+						<input
+							id="brand"
+							type="text"
+							placeholder="Type here"
+							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
+							onChange={(e) => setBrand(e.target.value)}
+							value={brand}
+						/>
+					</div>
+
+					{/* Color */}
+					<div className="flex flex-col gap-1 w-32">
+						<label className="text-base font-medium" htmlFor="color">
+							Color
+						</label>
+						<input
+							id="color"
+							type="text"
+							placeholder="Type here"
+							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
+							onChange={(e) => setColor(e.target.value)}
+							value={color}
+						/>
+					</div>
 				</div>
+
 				<button
 					type="submit"
 					className="px-8 py-2.5 bg-orange-600 text-white font-medium rounded"
@@ -172,7 +220,6 @@ const AddProduct = () => {
 					ADD
 				</button>
 			</form>
-			{/* <Footer /> */}
 		</div>
 	);
 };
