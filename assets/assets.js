@@ -51,8 +51,15 @@ import right from "./banner/right.png";
 import slider1 from "./slider/slider1.png";
 import slider2 from "./slider/slider2.png";
 import slider3 from "./slider/slider3.png";
+import threePiece from "./threePiece.jpg";
+import threePiece2 from "./threePiece2.jpg";
+import threePiece3 from "./threePiece3.jpg";
 
 export const assets = {
+	threePiece,
+	threePiece2,
+	threePiece3,
+
 	slider1,
 	slider2,
 	slider3,
