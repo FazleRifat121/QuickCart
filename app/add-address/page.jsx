@@ -1,15 +1,30 @@
 "use client";
-import { assets } from "@/assets/assets";
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Image from "next/image";
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 import axios from "axios";
 
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+const markerIcon = new L.Icon({
+	iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+	iconSize: [25, 41],
+	iconAnchor: [12, 41],
+	popupAnchor: [1, -34],
+	shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+	shadowSize: [41, 41],
+});
+
 const AddAddress = () => {
 	const { getToken, router } = useAppContext();
+	const mapRef = useRef(null);
+
 	const [address, setAddress] = useState({
 		fullName: "",
 		phoneNumber: "",
@@ -17,8 +32,59 @@ const AddAddress = () => {
 		area: "",
 		city: "",
 		state: "",
+		latitude: null,
+		longitude: null,
 	});
 
+	// 📍 Click on map to select location
+	const LocationMarker = () => {
+		useMapEvents({
+			click(e) {
+				setAddress((prev) => ({
+					...prev,
+					latitude: e.latlng.lat,
+					longitude: e.latlng.lng,
+				}));
+			},
+		});
+
+		return address.latitude && address.longitude ? (
+			<Marker
+				position={[address.latitude, address.longitude]}
+				icon={markerIcon}
+			/>
+		) : null;
+	};
+
+	// 📍 Locate Me button handler
+	const handleLocateMe = () => {
+		if (!navigator.geolocation) {
+			toast.error("Geolocation is not supported by your browser");
+			return;
+		}
+
+		navigator.geolocation.getCurrentPosition(
+			(position) => {
+				const { latitude, longitude } = position.coords;
+
+				setAddress((prev) => ({
+					...prev,
+					latitude,
+					longitude,
+				}));
+
+				// ✅ Move map to user location
+				if (mapRef.current) {
+					mapRef.current.setView([latitude, longitude], 15);
+				}
+			},
+			() => {
+				toast.error("Unable to retrieve your location");
+			}
+		);
+	};
+
+	// 📍 Save Address
 	const onSubmitHandler = async (e) => {
 		e.preventDefault();
 		try {
@@ -27,9 +93,7 @@ const AddAddress = () => {
 				"/api/user/add-address",
 				{ address },
 				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+					headers: { Authorization: `Bearer ${token}` },
 				}
 			);
 
@@ -47,15 +111,16 @@ const AddAddress = () => {
 	return (
 		<>
 			<Navbar />
-			<div className="px-6 md:px-16 lg:px-32 py-16 flex flex-col md:flex-row justify-between">
-				<form onSubmit={onSubmitHandler} className="w-full">
+			<div className="px-6 md:px-16 lg:px-32 py-16 flex flex-col md:flex-row justify-between gap-10">
+				{/* Address Form */}
+				<form onSubmit={onSubmitHandler} className="w-full md:w-1/2">
 					<p className="text-2xl md:text-3xl text-gray-500">
 						Add Shipping{" "}
 						<span className="font-semibold text-orange-600">Address</span>
 					</p>
 					<div className="space-y-3 max-w-sm mt-10">
 						<input
-							className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
+							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 							type="text"
 							placeholder="Full name"
 							onChange={(e) =>
@@ -64,7 +129,7 @@ const AddAddress = () => {
 							value={address.fullName}
 						/>
 						<input
-							className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
+							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 							type="text"
 							placeholder="Phone number"
 							onChange={(e) =>
@@ -73,7 +138,7 @@ const AddAddress = () => {
 							value={address.phoneNumber}
 						/>
 						<input
-							className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
+							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 							type="text"
 							placeholder="Pin code"
 							onChange={(e) =>
@@ -82,8 +147,7 @@ const AddAddress = () => {
 							value={address.pincode}
 						/>
 						<textarea
-							className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500 resize-none"
-							type="text"
+							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500 resize-none"
 							rows={4}
 							placeholder="Address (Area and Street)"
 							onChange={(e) => setAddress({ ...address, area: e.target.value })}
@@ -91,7 +155,7 @@ const AddAddress = () => {
 						></textarea>
 						<div className="flex space-x-3">
 							<input
-								className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
+								className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 								type="text"
 								placeholder="City/District/Town"
 								onChange={(e) =>
@@ -100,7 +164,7 @@ const AddAddress = () => {
 								value={address.city}
 							/>
 							<input
-								className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
+								className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 								type="text"
 								placeholder="State"
 								onChange={(e) =>
@@ -110,6 +174,14 @@ const AddAddress = () => {
 							/>
 						</div>
 					</div>
+
+					{/* Show selected Lat & Lng */}
+					{address.latitude && address.longitude && (
+						<p className="mt-4 text-sm text-gray-600">
+							📍 Selected Location: {address.latitude}, {address.longitude}
+						</p>
+					)}
+
 					<button
 						type="submit"
 						className="max-w-sm w-full mt-6 bg-orange-600 text-white py-3 hover:bg-orange-700 uppercase"
@@ -117,11 +189,31 @@ const AddAddress = () => {
 						Save address
 					</button>
 				</form>
-				<Image
-					className="md:mr-16 mt-16 md:mt-0"
-					src={assets.my_location_image}
-					alt="my_location_image"
-				/>
+
+				{/* Map Section */}
+				<div className="w-full md:w-1/2 h-[450px] md:h-[500px] relative">
+					{/* Locate Me Button */}
+					<button
+						onClick={handleLocateMe}
+						className="absolute top-3 right-3 z-[1000] bg-white shadow-md px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+					>
+						📍 Locate Me
+					</button>
+
+					<MapContainer
+						center={[23.8103, 90.4125]} // Default: Dhaka
+						zoom={13}
+						scrollWheelZoom={true}
+						className="h-full w-full rounded-lg shadow-md"
+						whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
+					>
+						<TileLayer
+							attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+							url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+						/>
+						<LocationMarker />
+					</MapContainer>
+				</div>
 			</div>
 			<Footer />
 		</>
