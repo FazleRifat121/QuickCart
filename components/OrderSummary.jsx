@@ -1,3 +1,4 @@
+"use client";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
@@ -14,28 +15,25 @@ const OrderSummary = () => {
 		user,
 		setCartItems,
 	} = useAppContext();
+
 	const [selectedAddress, setSelectedAddress] = useState(null);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
 	const [userAddresses, setUserAddresses] = useState([]);
+	const [paymentMethod, setPaymentMethod] = useState("cod");
+	const [onlineOption, setOnlineOption] = useState("bkash");
 
+	// Fetch user addresses
 	const fetchUserAddresses = async () => {
 		try {
 			const token = await getToken();
 			const { data } = await axios.get("/api/user/get-address", {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+				headers: { Authorization: `Bearer ${token}` },
 			});
 
 			if (data.success) {
 				setUserAddresses(data.addresses);
-				if (data.addresses.length > 0) {
-					setSelectedAddress(data.addresses[0]);
-				} else {
-					toast.error(data.message);
-				}
-			}
+				if (data.addresses.length > 0) setSelectedAddress(data.addresses[0]);
+			} else toast.error(data.message);
 		} catch (error) {
 			toast.error(error.message);
 		}
@@ -46,57 +44,73 @@ const OrderSummary = () => {
 		setIsDropdownOpen(false);
 	};
 
+	// Remove address
+	const handleRemoveAddress = async (e, addressId) => {
+		e.stopPropagation();
+		try {
+			const token = await getToken();
+			const { data } = await axios.delete("/api/user/remove-address", {
+				headers: { Authorization: `Bearer ${token}` },
+				data: { addressId },
+			});
+
+			if (data.success) {
+				toast.success(data.message);
+				setUserAddresses((prev) => prev.filter((a) => a._id !== addressId));
+				if (selectedAddress?._id === addressId) setSelectedAddress(null);
+			} else toast.error(data.message);
+		} catch (err) {
+			toast.error(err.message);
+		}
+	};
+
+	// Create order
 	const createOrder = async () => {
 		try {
-			if (!selectedAddress) {
-				return toast.error("Please select an address");
-			}
+			if (!selectedAddress) return toast.error("Please select an address");
+
 			let cartItemsArray = Object.keys(cartItems).map((key) => ({
 				product: key,
 				quantity: cartItems[key],
 			}));
 			cartItemsArray = cartItemsArray.filter((item) => item.quantity > 0);
-			if (cartItemsArray.length === 0) {
-				return toast.error("Cart is empty");
-			}
+			if (cartItemsArray.length === 0) return toast.error("Cart is empty");
+
 			const token = await getToken();
 			const { data } = await axios.post(
 				"/api/order/create",
 				{
 					address: selectedAddress._id,
 					items: cartItemsArray,
+					paymentMethod,
+					onlineOption: paymentMethod === "online" ? onlineOption : null,
 				},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
+				{ headers: { Authorization: `Bearer ${token}` } }
 			);
+
 			if (data.success) {
 				toast.success(data.message);
 				setCartItems({});
 				router.push("/order-placed");
-			} else {
-				toast.error(data.message);
-			}
+			} else toast.error(data.message);
 		} catch (error) {
 			toast.error(error.message);
 		}
 	};
 
 	useEffect(() => {
-		if (user) {
-			fetchUserAddresses();
-		}
+		if (user) fetchUserAddresses();
 	}, [user]);
 
 	return (
-		<div className="w-full md:w-96 bg-gray-500/5 p-5">
+		<div className="w-full md:w-96 bg-gray-500/5 p-4 md:p-5">
 			<h2 className="text-xl md:text-2xl font-medium text-gray-700">
 				Order Summary
 			</h2>
 			<hr className="border-gray-500/30 my-5" />
+
 			<div className="space-y-6">
+				{/* Address Selection */}
 				<div>
 					<label className="text-base font-medium uppercase text-gray-600 block mb-2">
 						Select Address
@@ -130,20 +144,28 @@ const OrderSummary = () => {
 						</button>
 
 						{isDropdownOpen && (
-							<ul className="absolute w-full bg-white border shadow-md mt-1 z-10 py-1.5">
-								{userAddresses.map((address, index) => (
+							<ul className="absolute w-full max-h-60 overflow-y-auto bg-white border shadow-md mt-1 z-10 py-1.5">
+								{userAddresses.map((address) => (
 									<li
-										key={index}
-										className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
+										key={address._id}
+										className="flex justify-between items-center px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
 										onClick={() => handleAddressSelect(address)}
 									>
-										{address.fullName}, {address.area}, {address.city},{" "}
-										{address.state}
+										<span className="text-sm">
+											{address.fullName}, {address.area}, {address.city},{" "}
+											{address.state}
+										</span>
+										<button
+											className="text-red-500 hover:text-red-700 ml-2 text-sm"
+											onClick={(e) => handleRemoveAddress(e, address._id)}
+										>
+											Remove
+										</button>
 									</li>
 								))}
 								<li
 									onClick={() => router.push("/add-address")}
-									className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center"
+									className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center text-sm"
 								>
 									+ Add New Address
 								</li>
@@ -152,6 +174,72 @@ const OrderSummary = () => {
 					</div>
 				</div>
 
+				{/* Payment Method */}
+				<div>
+					<label className="text-base font-medium uppercase text-gray-600 block mb-2">
+						Payment Method
+					</label>
+					<div className="flex flex-col gap-3">
+						<label className="flex items-center gap-2">
+							<input
+								type="radio"
+								name="payment"
+								value="cod"
+								checked={paymentMethod === "cod"}
+								onChange={() => setPaymentMethod("cod")}
+							/>
+							Cash on Delivery
+						</label>
+						<label className="flex items-center gap-2">
+							<input
+								type="radio"
+								name="payment"
+								value="online"
+								checked={paymentMethod === "online"}
+								onChange={() => setPaymentMethod("online")}
+							/>
+							Online Payment
+						</label>
+					</div>
+
+					{/* Online Payment Options */}
+					{paymentMethod === "online" && (
+						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm">
+							<label className="flex items-center gap-2">
+								<input
+									type="radio"
+									name="onlineOption"
+									value="bkash"
+									checked={onlineOption === "bkash"}
+									onChange={() => setOnlineOption("bkash")}
+								/>
+								bKash
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									type="radio"
+									name="onlineOption"
+									value="nagad"
+									checked={onlineOption === "nagad"}
+									onChange={() => setOnlineOption("nagad")}
+								/>
+								Nagad
+							</label>
+							<label className="flex items-center gap-2">
+								<input
+									type="radio"
+									name="onlineOption"
+									value="card"
+									checked={onlineOption === "card"}
+									onChange={() => setOnlineOption("card")}
+								/>
+								Visa/MasterCard
+							</label>
+						</div>
+					)}
+				</div>
+
+				{/* Promo Code */}
 				<div>
 					<label className="text-base font-medium uppercase text-gray-600 block mb-2">
 						Promo Code
@@ -160,7 +248,7 @@ const OrderSummary = () => {
 						<input
 							type="text"
 							placeholder="Enter promo code"
-							className="flex-grow w-full outline-none p-2.5 text-gray-600 border"
+							className="flex-grow w-full outline-none p-2.5 text-gray-600 border text-sm md:text-base"
 						/>
 						<button className="bg-orange-600 text-white px-9 py-2 hover:bg-orange-700">
 							Apply
@@ -170,6 +258,7 @@ const OrderSummary = () => {
 
 				<hr className="border-gray-500/30 my-5" />
 
+				{/* Order Summary */}
 				<div className="space-y-4">
 					<div className="flex justify-between text-base font-medium">
 						<p className="uppercase text-gray-600">Items {getCartCount()}</p>
