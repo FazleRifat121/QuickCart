@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { assets, productsDummyData } from "@/assets/assets";
+import { assets } from "@/assets/assets";
+import { RiDeleteBin6Fill } from "react-icons/ri";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
@@ -35,6 +36,26 @@ const ProductList = () => {
 		}
 	};
 
+	const handleDelete = async (productId) => {
+		if (!confirm("Are you sure you want to delete this product?")) return;
+
+		try {
+			const token = await getToken();
+			const { data } = await axios.delete(`/api/product/delete/${productId}`, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+
+			if (data.success) {
+				toast.success(data.message);
+				setProducts(products.filter((product) => product._id !== productId));
+			} else {
+				toast.error(data.message || "Failed to delete product");
+			}
+		} catch (error) {
+			toast.error(error.message || "Something went wrong");
+		}
+	};
+
 	useEffect(() => {
 		if (user) {
 			fetchSellerProduct();
@@ -62,6 +83,7 @@ const ProductList = () => {
 									<th className="px-4 py-3 font-medium truncate max-sm:hidden">
 										Action
 									</th>
+									<th className="px-4 py-3 font-medium truncate ">Action</th>
 								</tr>
 							</thead>
 							<tbody className="text-sm text-gray-500">
@@ -94,6 +116,14 @@ const ProductList = () => {
 													src={assets.redirect_icon}
 													alt="redirect_icon"
 												/>
+											</button>
+										</td>
+										<td className="px-4 py-3 ">
+											<button
+												onClick={() => handleDelete(product._id)}
+												className="flex items-center gap-1 px-1.5 md:px-3.5 py-2 bg-red-600 rounded-md text-white text-xl"
+											>
+												<RiDeleteBin6Fill />
 											</button>
 										</td>
 									</tr>
