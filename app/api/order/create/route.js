@@ -8,31 +8,47 @@ export async function POST(request) {
 	try {
 		const { userId } = getAuth(request);
 		const { address, items } = await request.json();
+
 		if (!address || !items || items.length === 0) {
 			return NextResponse.json(
 				{ success: false, message: "Invalid order data" },
 				{ status: 400 }
 			);
 		}
-		//calculate price using items ammount
-		const amount = await items.reduce(async (acc, item) => {
+
+		// ✅ calculate price properly
+		let amount = 0;
+		for (const item of items) {
 			const product = await Product.findById(item.product);
-			return acc + product.offerPrice * item.quantity;
-		}, 0);
+			if (!product) {
+				return NextResponse.json(
+					{ success: false, message: "Product not found" },
+					{ status: 404 }
+				);
+			}
+			amount += product.offerPrice * item.quantity;
+		}
+		amount += Math.floor(amount * 0.02); // add 2% fee
+
+		// ✅ send order event with slash
 		await inngest.send({
 			name: "order/created",
 			data: {
 				userId,
 				address,
 				items,
-				amount: amount + math.floor(amount * 0.02),
-				date: date.now(),
+				amount,
+				date: Date.now(),
 			},
 		});
-		//clear user cart
+
+		// clear user cart
 		const user = await User.findById(userId);
-		user.cart = {};
-		await user.save();
+		if (user) {
+			user.cart = {};
+			await user.save();
+		}
+
 		return NextResponse.json(
 			{ success: true, message: "Order Placed" },
 			{ status: 200 }
