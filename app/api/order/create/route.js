@@ -20,7 +20,7 @@ export async function POST(request) {
 		const amount = await items.reduce(async (accP, item) => {
 			const acc = await accP;
 			const product = await Product.findById(item.product);
-			return acc + product.offerPrice * item.quantity;
+			return (await acc) + product.offerPrice * item.quantity;
 		}, 0);
 
 		// ✅ send order event with slash
