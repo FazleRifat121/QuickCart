@@ -48,8 +48,14 @@ import product_details_page_apple_earphone_image4 from "./product_details_page_a
 import product_details_page_apple_earphone_image5 from "./product_details_page_apple_earphone_image5.png";
 import left from "./banner/left.png";
 import right from "./banner/right.png";
+import slider1 from "./slider/slider1.png";
+import slider2 from "./slider/slider2.png";
+import slider3 from "./slider/slider3.png";
 
 export const assets = {
+	slider1,
+	slider2,
+	slider3,
 	left,
 	right,
 	logo,
