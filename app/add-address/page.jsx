@@ -2,16 +2,34 @@
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
 import { useState, useRef } from "react";
 import { useAppContext } from "@/context/AppContext";
 import toast from "react-hot-toast";
 import axios from "axios";
+import dynamic from "next/dynamic";
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+// Dynamically import react-leaflet map with ssr: false
+const MapContainer = dynamic(
+	() => import("react-leaflet").then((mod) => mod.MapContainer),
+	{ ssr: false }
+);
+const TileLayer = dynamic(
+	() => import("react-leaflet").then((mod) => mod.TileLayer),
+	{ ssr: false }
+);
+const Marker = dynamic(
+	() => import("react-leaflet").then((mod) => mod.Marker),
+	{ ssr: false }
+);
+const useMapEvents = dynamic(
+	() => import("react-leaflet").then((mod) => mod.useMapEvents),
+	{ ssr: false }
+);
+
 import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
+// Leaflet marker icon
 const markerIcon = new L.Icon({
 	iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
 	iconSize: [25, 41],
@@ -36,7 +54,7 @@ const AddAddress = () => {
 		longitude: null,
 	});
 
-	// 📍 Click on map to select location
+	// Marker click event
 	const LocationMarker = () => {
 		useMapEvents({
 			click(e) {
@@ -56,35 +74,25 @@ const AddAddress = () => {
 		) : null;
 	};
 
-	// 📍 Locate Me button handler
+	// Locate me
 	const handleLocateMe = () => {
 		if (!navigator.geolocation) {
 			toast.error("Geolocation is not supported by your browser");
 			return;
 		}
-
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
 				const { latitude, longitude } = position.coords;
-
-				setAddress((prev) => ({
-					...prev,
-					latitude,
-					longitude,
-				}));
-
-				// ✅ Move map to user location
+				setAddress((prev) => ({ ...prev, latitude, longitude }));
 				if (mapRef.current) {
 					mapRef.current.setView([latitude, longitude], 15);
 				}
 			},
-			() => {
-				toast.error("Unable to retrieve your location");
-			}
+			() => toast.error("Unable to retrieve your location")
 		);
 	};
 
-	// 📍 Save Address
+	// Submit form
 	const onSubmitHandler = async (e) => {
 		e.preventDefault();
 		try {
@@ -92,9 +100,7 @@ const AddAddress = () => {
 			const { data } = await axios.post(
 				"/api/user/add-address",
 				{ address },
-				{
-					headers: { Authorization: `Bearer ${token}` },
-				}
+				{ headers: { Authorization: `Bearer ${token}` } }
 			);
 
 			if (data.success) {
@@ -175,7 +181,7 @@ const AddAddress = () => {
 						</div>
 					</div>
 
-					{/* Show selected Lat & Lng */}
+					{/* Selected Lat/Lng */}
 					{address.latitude && address.longitude && (
 						<p className="mt-4 text-sm text-gray-600">
 							📍 Selected Location: {address.latitude}, {address.longitude}
@@ -190,9 +196,8 @@ const AddAddress = () => {
 					</button>
 				</form>
 
-				{/* Map Section */}
+				{/* Map */}
 				<div className="w-full md:w-1/2 h-[450px] md:h-[500px] relative">
-					{/* Locate Me Button */}
 					<button
 						onClick={handleLocateMe}
 						className="absolute top-3 right-3 z-[1000] bg-white shadow-md px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
@@ -201,7 +206,7 @@ const AddAddress = () => {
 					</button>
 
 					<MapContainer
-						center={[23.8103, 90.4125]} // Default: Dhaka
+						center={[23.8103, 90.4125]} // Dhaka default
 						zoom={13}
 						scrollWheelZoom={true}
 						className="h-full w-full rounded-lg shadow-md"
