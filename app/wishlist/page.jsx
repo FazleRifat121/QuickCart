@@ -7,22 +7,16 @@ import { assets } from "@/assets/assets";
 import toast from "react-hot-toast";
 
 const Wishlist = () => {
-	const { router, products, wishlist, toggleWishlist } = useAppContext();
+	const { router, products, wishlist = [], toggleWishlist } = useAppContext();
 
 	// Compute wishlistProducts safely
 	const wishlistProducts = Array.isArray(wishlist)
 		? wishlist
 				.map((idOrObj) =>
-					products.find(
-						(p) =>
-							p &&
-							idOrObj &&
-							p._id === (typeof idOrObj === "string" ? idOrObj : idOrObj._id)
-					)
+					products.find((p) => p && p._id === (idOrObj._id || idOrObj))
 				)
 				.filter(Boolean)
-		: [];
-
+		: []; // filter out any undefined values
 	const handleRemove = (product) => {
 		if (!product) return; // safety
 		toggleWishlist(product);

@@ -20,14 +20,15 @@ export const AppContextProvider = ({ children }) => {
 	const [cartItems, setCartItems] = useState({});
 	const [wishlist, setWishlist] = useState([]);
 
+	const [orders, setOrders] = useState([]);
+
 	// -------- PRODUCTS --------
 	const fetchProductData = async () => {
 		try {
 			const { data } = await axios.get("/api/product/list");
 			if (data.success) setProducts(data.products);
-			else toast.error(data.message || "Failed to fetch products");
 		} catch (err) {
-			toast.error(err.message || "Something went wrong");
+			toast.error(err.message || "Failed to fetch products");
 		}
 	};
 
@@ -45,9 +46,23 @@ export const AppContextProvider = ({ children }) => {
 				setUserData(data.user);
 				setCartItems(data.user.cartItems || {});
 				setWishlist(data.user.wishlist || []);
-			} else toast.error(data.message);
+			}
 		} catch (err) {
 			toast.error(err.message);
+		}
+	};
+
+	// -------- ORDERS --------
+	const fetchOrders = async () => {
+		if (!user) return;
+		try {
+			const token = await getToken();
+			const { data } = await axios.get("/api/order/list", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			if (data.success) setOrders(data.orders.reverse());
+		} catch (err) {
+			console.log(err.message);
 		}
 	};
 
@@ -72,27 +87,6 @@ export const AppContextProvider = ({ children }) => {
 		}
 	};
 
-	const updateCartQuantity = async (itemId, quantity) => {
-		const updatedCart = { ...cartItems };
-		if (quantity === 0) delete updatedCart[itemId];
-		else updatedCart[itemId] = quantity;
-		setCartItems(updatedCart);
-
-		if (user) {
-			try {
-				const token = await getToken();
-				await axios.post(
-					"/api/cart/update",
-					{ cartData: updatedCart },
-					{ headers: { Authorization: `Bearer ${token}` } }
-				);
-				toast.success("Cart updated successfully");
-			} catch (err) {
-				toast.error(err.message || "Failed to update cart");
-			}
-		}
-	};
-
 	const getCartCount = () =>
 		Object.values(cartItems).reduce((sum, q) => sum + q, 0);
 
@@ -106,26 +100,12 @@ export const AppContextProvider = ({ children }) => {
 
 	// -------- WISHLIST --------
 	const toggleWishlist = async (product) => {
-		if (!product || !product._id) return; // safety check
+		if (!product || !product._id) return; // ✅ ignore invalid entries
 
-		const currentWishlist = Array.isArray(wishlist)
-			? wishlist.filter(Boolean)
-			: [];
-
-		const exists = currentWishlist.some(
-			(item) => item && item._id === product._id
-		);
-
-		let updated;
-		if (exists) {
-			// Remove
-			updated = currentWishlist.filter(
-				(item) => item && item._id !== product._id
-			);
-		} else {
-			// Add
-			updated = [...currentWishlist, product];
-		}
+		const exists = wishlist.some((p) => p && p._id === product._id);
+		const updated = exists
+			? wishlist.filter((p) => p && p._id !== product._id)
+			: [...wishlist.filter(Boolean), product]; // remove nulls
 
 		setWishlist(updated);
 
@@ -144,12 +124,7 @@ export const AppContextProvider = ({ children }) => {
 			localStorage.setItem("wishlist", JSON.stringify(updated));
 		}
 	};
-
-	// -------- EFFECTS --------
-	useEffect(() => {
-		fetchProductData();
-	}, []);
-
+	// -------- Local Wishlist --------
 	useEffect(() => {
 		const loadWishlist = async () => {
 			if (user) {
@@ -160,16 +135,51 @@ export const AppContextProvider = ({ children }) => {
 						headers: { Authorization: `Bearer ${token}` },
 					});
 					const data = await res.json();
-					if (data.success) setWishlist(data.wishlist || []);
+					if (data.success)
+						setWishlist(Array.isArray(data.wishlist) ? data.wishlist : []);
 				} catch (err) {
 					console.log("Wishlist fetch error:", err.message);
 				}
 			} else {
 				const stored = localStorage.getItem("wishlist");
-				if (stored) setWishlist(JSON.parse(stored));
+				setWishlist(stored ? JSON.parse(stored) : []);
 			}
 		};
 		loadWishlist();
+	}, [user]);
+
+	// -------- CART QUANTITY UPDATE --------
+	const updateCartQuantity = async (itemId, quantity) => {
+		const updatedCart = { ...cartItems };
+		if (quantity <= 0) delete updatedCart[itemId];
+		else updatedCart[itemId] = quantity;
+		setCartItems(updatedCart);
+
+		if (user) {
+			try {
+				const token = await getToken();
+				await axios.post(
+					"/api/cart/update",
+					{ cartData: updatedCart },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				toast.success("Cart updated");
+			} catch (err) {
+				toast.error(err.message || "Failed to update cart");
+			}
+		}
+	};
+
+	// -------- EFFECTS --------
+	useEffect(() => {
+		fetchProductData();
+	}, []);
+
+	useEffect(() => {
+		if (user) {
+			fetchUserData();
+			fetchOrders();
+		}
 	}, [user]);
 
 	const value = {
@@ -180,17 +190,15 @@ export const AppContextProvider = ({ children }) => {
 		isSeller,
 		setIsSeller,
 		userData,
-		fetchUserData,
 		products,
-		fetchProductData,
 		cartItems,
+		wishlist,
+		orders,
+		updateCartQuantity,
 		setCartItems,
 		addToCart,
-		updateCartQuantity,
 		getCartCount,
 		getCartAmount,
-		wishlist,
-		setWishlist,
 		toggleWishlist,
 	};
 

@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
 		imageUrl: { type: String, required: true },
 		cartItems: { type: Object, default: {} },
 		wishlist: { type: Object, default: {} },
+		orders: { type: Object, default: {} },
 	},
 	{ minimize: false }
 );

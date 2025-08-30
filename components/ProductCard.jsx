@@ -14,13 +14,13 @@ const ProductCard = ({ product }) => {
 		wishlist.some(
 			(p) => p && (p._id ? p._id === product._id : p === product._id)
 		);
-
 	const handleWishlistClick = (e) => {
 		e.stopPropagation();
 
 		if (!user) return toast.error("Login to add to wishlist");
+		if (!product || !product._id) return; // ✅ safety check
 
-		toggleWishlist(product); // updates context + DB
+		toggleWishlist(product);
 
 		// Show toast based on new state
 		if (!isWish) toast.success("Added to wishlist");
