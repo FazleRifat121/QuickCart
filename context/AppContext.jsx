@@ -106,16 +106,24 @@ export const AppContextProvider = ({ children }) => {
 
 	// -------- WISHLIST --------
 	const toggleWishlist = async (product) => {
-		const currentWishlist = Array.isArray(wishlist) ? wishlist : [];
+		if (!product || !product._id) return; // safety check
 
-		const exists = currentWishlist.some((item) => item._id === product._id);
+		const currentWishlist = Array.isArray(wishlist)
+			? wishlist.filter(Boolean)
+			: [];
+
+		const exists = currentWishlist.some(
+			(item) => item && item._id === product._id
+		);
+
 		let updated;
-
 		if (exists) {
-			// Remove from wishlist
-			updated = currentWishlist.filter((item) => item._id !== product._id);
+			// Remove
+			updated = currentWishlist.filter(
+				(item) => item && item._id !== product._id
+			);
 		} else {
-			// Add to wishlist
+			// Add
 			updated = [...currentWishlist, product];
 		}
 
@@ -133,7 +141,6 @@ export const AppContextProvider = ({ children }) => {
 				console.log("Wishlist DB update error:", err.message);
 			}
 		} else {
-			// Save guest wishlist locally
 			localStorage.setItem("wishlist", JSON.stringify(updated));
 		}
 	};

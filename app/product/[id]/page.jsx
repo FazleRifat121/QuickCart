@@ -106,42 +106,20 @@ const Product = () => {
 						<div className="overflow-x-auto">
 							<table className="table-auto border-collapse w-full max-w-72">
 								<tbody>
-									<tr>
-										{productData.brand && (
-											<tr>
-												<td className="text-gray-600 font-medium">Brand</td>
-												<td className="text-gray-800/50 ">
-													{productData.brand}
-												</td>
-											</tr>
-										)}
-
-										{productData.color && (
-											<tr>
-												<td className="text-gray-600 font-medium">Color</td>
-												<td className="text-gray-800/50 ">
-													{productData.color}
-												</td>
-											</tr>
-										)}
-
+									{productData.brand && (
 										<tr>
-											<td className="text-gray-600 font-medium">Category</td>
-											<td className="text-gray-800/50">
-												{productData.category}
-											</td>
+											<td className="text-gray-600 font-medium">Brand</td>
+											<td className="text-gray-800/50">{productData.brand}</td>
 										</tr>
-									</tr>
-									<tr>
-										{productData.color && (
-											<>
-												<td className="text-gray-600 font-medium">Color</td>
-												<td className="text-gray-800/50 ">
-													{productData.color}
-												</td>
-											</>
-										)}
-									</tr>
+									)}
+
+									{productData.color && (
+										<tr>
+											<td className="text-gray-600 font-medium">Color</td>
+											<td className="text-gray-800/50">{productData.color}</td>
+										</tr>
+									)}
+
 									<tr>
 										<td className="text-gray-600 font-medium">Category</td>
 										<td className="text-gray-800/50">{productData.category}</td>

@@ -10,7 +10,8 @@ import toast from "react-hot-toast";
 import { MdDashboard } from "react-icons/md";
 
 const Navbar = () => {
-	const { isSeller, router, user } = useAppContext();
+	const { isSeller, router, user, wishlist } = useAppContext();
+	const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
 	const { openSignIn } = useClerk();
 	const [showSearch, setShowSearch] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -95,7 +96,29 @@ const Navbar = () => {
 								/>
 							</UserButton.MenuItems>
 
-							{/* Seller Dashboard for small devices only */}
+							{/* Wishlist item for mobile */}
+							<UserButton.MenuItems>
+								<UserButton.Action
+									label="Wishlist"
+									labelIcon={
+										<div className="relative">
+											<Image
+												src={assets.heart_icon}
+												alt="wishlist"
+												className="w-5 h-5"
+											/>
+											{wishlistCount > 0 && (
+												<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full px-1.5">
+													{wishlistCount}
+												</span>
+											)}
+										</div>
+									}
+									onClick={() => router.push("/wishlist")}
+								/>
+							</UserButton.MenuItems>
+
+							{/* Seller Dashboard for small devices */}
 							{isSeller && (
 								<UserButton.MenuItems>
 									<UserButton.Action
@@ -179,9 +202,6 @@ const Navbar = () => {
 				<Link href="/" className="hover:text-gray-900 transition">
 					Contact
 				</Link>
-				<Link href="/wishlist" className="hover:text-gray-900 transition">
-					Wishlist
-				</Link>
 
 				{/* Seller Dashboard for large devices */}
 				{isSeller && (
@@ -218,7 +238,26 @@ const Navbar = () => {
 								onClick={() => router.push("/my-orders")}
 							/>
 						</UserButton.MenuItems>
-						{/* Seller Dashboard hidden on large devices */}
+						<UserButton.MenuItems>
+							<UserButton.Action
+								label="Wishlist"
+								labelIcon={
+									<div className="relative">
+										<Image
+											src={assets.heart_icon}
+											alt="wishlist"
+											className="w-5 h-5"
+										/>
+										{wishlistCount > 0 && (
+											<span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full px-1.5">
+												{wishlistCount}
+											</span>
+										)}
+									</div>
+								}
+								onClick={() => router.push("/wishlist")}
+							/>
+						</UserButton.MenuItems>
 					</UserButton>
 				) : (
 					<button
