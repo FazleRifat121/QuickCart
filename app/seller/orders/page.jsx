@@ -18,25 +18,19 @@ const Orders = () => {
 		try {
 			const token = await getToken();
 			const { data } = await axios.get("/api/order/seller-orders", {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+				headers: { Authorization: `Bearer ${token}` },
 			});
 			if (data.success) {
 				setOrders(data.orders);
 				setLoading(false);
-			} else {
-				toast.error(data.message);
-			}
+			} else toast.error(data.message);
 		} catch (error) {
 			toast.error(error.message);
 		}
 	};
 
 	useEffect(() => {
-		if (user) {
-			fetchSellerOrders();
-		}
+		if (user) fetchSellerOrders();
 	}, [user]);
 
 	return (
@@ -50,7 +44,9 @@ const Orders = () => {
 						{orders.map((order, index) => (
 							<div
 								key={index}
-								className="flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300"
+								className={`flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300 ${
+									order.status === "Canceled" ? "bg-red-50" : ""
+								}`}
 							>
 								<div className="flex-1 flex gap-5 max-w-80">
 									<Image
@@ -94,7 +90,7 @@ const Orders = () => {
 										<span>
 											Date : {new Date(order.date).toLocaleDateString()}
 										</span>
-										<span>Payment : Pending</span>
+										<span>Status : {order.status}</span>
 									</p>
 								</div>
 							</div>

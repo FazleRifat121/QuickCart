@@ -1,110 +1,74 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useAppContext } from "@/context/AppContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
-import { useAppContext } from "@/context/AppContext";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
-import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const MyOrders = () => {
-	const { currency, getToken, user } = useAppContext();
+	const { orders, currency, getToken, setOrders } = useAppContext();
 
-	const [orders, setOrders] = useState([]);
-	const [loading, setLoading] = useState(true);
-
-	const fetchOrders = async () => {
+	const handleCancelOrder = async (orderId) => {
+		if (!confirm("Are you sure you want to cancel this order?")) return;
 		try {
 			const token = await getToken();
-			const { data } = await axios.get("/api/order/list", {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
+			const { data } = await axios.post(
+				"/api/order/cancel",
+				{ orderId },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
 			if (data.success) {
-				setOrders(data.orders.reverse());
-				setLoading(false);
+				toast.success("Order canceled successfully");
+				// Update local orders state
+				setOrders((prev) =>
+					prev.map((o) =>
+						o._id === orderId ? { ...o, status: "Canceled" } : o
+					)
+				);
 			} else {
-				toast.error(data.message);
+				toast.error(data.message || "Failed to cancel order");
 			}
-		} catch (error) {
-			toast.error(error.message);
+		} catch (err) {
+			toast.error(err.message || "Something went wrong");
 		}
 	};
-
-	useEffect(() => {
-		if (user) {
-			fetchOrders();
-		}
-	}, [user]);
 
 	return (
 		<>
 			<Navbar />
-			<div className="flex flex-col justify-between px-6 md:px-16 lg:px-32 py-6 min-h-screen">
-				<div className="space-y-5">
-					<h2 className="text-lg font-medium mt-6">My Orders</h2>
-					{loading ? (
-						<Loading />
-					) : (
-						<div className="max-w-5xl border-t border-gray-300 text-sm">
-							{orders.map((order, index) => (
-								<div
-									key={index}
-									className="flex flex-col md:flex-row gap-5 justify-between p-5 border-b border-gray-300"
-								>
-									<div className="flex-1 flex gap-5 max-w-80">
-										<Image
-											className="max-w-16 max-h-16 object-cover"
-											src={assets.box_icon}
-											alt="box_icon"
-										/>
-										<p className="flex flex-col gap-3">
-											<span className="font-medium text-base">
-												{order.items
-													.map((item) =>
-														item.product
-															? item.product.name + ` x ${item.quantity}`
-															: `Unknown Product x ${item.quantity}`
-													)
-													.join(", ")}
-											</span>
-											<span>Items : {order.items.length}</span>
-										</p>
-									</div>
-									<div>
-										<p>
-											<span className="font-medium">
-												{order.address.fullName}
-											</span>
-											<br />
-											<span>{order.address.area}</span>
-											<br />
-											<span>{`${order.address.city}, ${order.address.state}`}</span>
-											<br />
-											<span>{order.address.phoneNumber}</span>
-										</p>
-									</div>
-									<p className="font-medium my-auto">
-										{currency}
-										{order.amount}
-									</p>
-									<div>
-										<p className="flex flex-col">
-											<span>Method : COD</span>
-											<span>
-												Date : {new Date(order.date).toLocaleDateString()}
-											</span>
-											<span>Payment : Pending</span>
-										</p>
-									</div>
-								</div>
-							))}
+			<div className="min-h-screen px-6 md:px-16 py-6">
+				<h2 className="text-lg font-medium mb-4">My Orders</h2>
+				{orders.length === 0 ? (
+					<p>No orders yet.</p>
+				) : (
+					orders.map((order) => (
+						<div
+							key={order._id}
+							className="flex flex-col md:flex-row gap-4 border p-4 mb-4"
+						>
+							<Image src={assets.box_icon} alt="box" width={50} height={50} />
+							<div className="flex-1">
+								<p>Items: {order.items.length}</p>
+								<p>
+									Amount: {currency}
+									{order.amount}
+								</p>
+								<p>Status: {order.status}</p>
+								{order.status !== "Canceled" && (
+									<button
+										onClick={() => handleCancelOrder(order._id)}
+										className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+									>
+										Cancel Order
+									</button>
+								)}
+							</div>
 						</div>
-					)}
-				</div>
+					))
+				)}
 			</div>
 			<Footer />
 		</>
