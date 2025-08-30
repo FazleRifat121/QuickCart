@@ -1,8 +1,10 @@
 "use client";
+import { assets } from "@/assets/assets";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 const OrderSummary = () => {
 	const {
@@ -21,6 +23,8 @@ const OrderSummary = () => {
 	const [userAddresses, setUserAddresses] = useState([]);
 	const [paymentMethod, setPaymentMethod] = useState("cod");
 	const [onlineOption, setOnlineOption] = useState("bkash");
+	const [promoCode, setPromoCode] = useState("");
+	const [discount, setDiscount] = useState(0);
 
 	// Fetch user addresses
 	const fetchUserAddresses = async () => {
@@ -39,9 +43,15 @@ const OrderSummary = () => {
 		}
 	};
 
-	const handleAddressSelect = (address) => {
-		setSelectedAddress(address);
-		setIsDropdownOpen(false);
+	// Handle promo code
+	const applyPromo = () => {
+		if (promoCode.toLowerCase() === "save10") {
+			setDiscount(Math.floor(getCartAmount() * 0.1));
+			toast.success("Promo applied: 10% off!");
+		} else {
+			setDiscount(0);
+			toast.error("Invalid promo code");
+		}
 	};
 
 	// Remove address
@@ -84,6 +94,7 @@ const OrderSummary = () => {
 					items: cartItemsArray,
 					paymentMethod,
 					onlineOption: paymentMethod === "online" ? onlineOption : null,
+					discount,
 				},
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
@@ -101,13 +112,31 @@ const OrderSummary = () => {
 	useEffect(() => {
 		if (user) fetchUserAddresses();
 	}, [user]);
+	// bksah
+	const payOnBkash = async (userId) => {
+		console.log(userId);
+		try {
+			const { data } = await axios.post(
+				"/api/user/bkash-payment",
+				{ userId },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+		} catch (error) {
+			console.log(error.message);
+			toast.error(error.message);
+		}
+	};
+	// Totals
+	const subtotal = getCartAmount();
+	const tax = Math.floor((subtotal - discount) * 0.02);
+	const total = subtotal - discount + tax;
 
 	return (
-		<div className="w-full md:w-96 bg-gray-500/5 p-4 md:p-5">
+		<div className="w-full md:w-96 bg-gray-50 p-4 md:p-5 rounded-lg shadow-sm">
 			<h2 className="text-xl md:text-2xl font-medium text-gray-700">
 				Order Summary
 			</h2>
-			<hr className="border-gray-500/30 my-5" />
+			<hr className="border-gray-300 my-5" />
 
 			<div className="space-y-6">
 				{/* Address Selection */}
@@ -115,19 +144,19 @@ const OrderSummary = () => {
 					<label className="text-base font-medium uppercase text-gray-600 block mb-2">
 						Select Address
 					</label>
-					<div className="relative inline-block w-full text-sm border">
+					<div className="relative w-full text-sm border rounded-md">
 						<button
-							className="peer w-full text-left px-4 pr-2 py-2 bg-white text-gray-700 focus:outline-none"
+							className="peer w-full text-left px-4 pr-2 py-2 bg-white text-gray-700 flex justify-between items-center"
 							onClick={() => setIsDropdownOpen(!isDropdownOpen)}
 						>
 							<span>
 								{selectedAddress
-									? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}, ${selectedAddress.state}`
+									? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}`
 									: "Select Address"}
 							</span>
 							<svg
-								className={`w-5 h-5 inline float-right transition-transform duration-200 ${
-									isDropdownOpen ? "rotate-0" : "-rotate-90"
+								className={`w-5 h-5 transition-transform duration-200 ${
+									isDropdownOpen ? "rotate-180" : "rotate-0"
 								}`}
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
@@ -144,16 +173,18 @@ const OrderSummary = () => {
 						</button>
 
 						{isDropdownOpen && (
-							<ul className="absolute w-full max-h-60 overflow-y-auto bg-white border shadow-md mt-1 z-10 py-1.5">
+							<ul className="absolute w-full max-h-60 overflow-y-auto bg-white border shadow-md mt-1 z-10 py-1.5 rounded-md">
 								{userAddresses.map((address) => (
 									<li
 										key={address._id}
-										className="flex justify-between items-center px-4 py-2 hover:bg-gray-500/10 cursor-pointer"
-										onClick={() => handleAddressSelect(address)}
+										className="flex justify-between items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+										onClick={() => {
+											setSelectedAddress(address);
+											setIsDropdownOpen(false);
+										}}
 									>
 										<span className="text-sm">
-											{address.fullName}, {address.area}, {address.city},{" "}
-											{address.state}
+											{address.fullName}, {address.area}, {address.city}
 										</span>
 										<button
 											className="text-red-500 hover:text-red-700 ml-2 text-sm"
@@ -165,7 +196,7 @@ const OrderSummary = () => {
 								))}
 								<li
 									onClick={() => router.push("/add-address")}
-									className="px-4 py-2 hover:bg-gray-500/10 cursor-pointer text-center text-sm"
+									className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-center text-sm"
 								>
 									+ Add New Address
 								</li>
@@ -204,15 +235,16 @@ const OrderSummary = () => {
 
 					{/* Online Payment Options */}
 					{paymentMethod === "online" && (
-						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm">
-							<label className="flex items-center gap-2">
+						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm ">
+							<label className="flex items-center gap-2 cursor-pointer">
 								<input
 									type="radio"
 									name="onlineOption"
 									value="bkash"
 									checked={onlineOption === "bkash"}
-									onChange={() => setOnlineOption("bkash")}
+									onClick={() => payOnBkash(user.id)}
 								/>
+								<Image src={assets.bkash} alt="bKash" width={50} height={50} />
 								bKash
 							</label>
 							<label className="flex items-center gap-2">
@@ -233,7 +265,7 @@ const OrderSummary = () => {
 									checked={onlineOption === "card"}
 									onChange={() => setOnlineOption("card")}
 								/>
-								Visa/MasterCard
+								Visa / MasterCard
 							</label>
 						</div>
 					)}
@@ -244,45 +276,53 @@ const OrderSummary = () => {
 					<label className="text-base font-medium uppercase text-gray-600 block mb-2">
 						Promo Code
 					</label>
-					<div className="flex flex-col items-start gap-3">
+					<div className="flex flex-col gap-3">
 						<input
 							type="text"
 							placeholder="Enter promo code"
-							className="flex-grow w-full outline-none p-2.5 text-gray-600 border text-sm md:text-base"
+							value={promoCode}
+							onChange={(e) => setPromoCode(e.target.value)}
+							className="flex-grow w-full outline-none p-2.5 text-gray-600 border rounded-md text-sm md:text-base"
 						/>
-						<button className="bg-orange-600 text-white px-9 py-2 hover:bg-orange-700">
+						<button
+							onClick={applyPromo}
+							className="bg-orange-600 text-white px-6 py-2 hover:bg-orange-700 rounded-md"
+						>
 							Apply
 						</button>
 					</div>
 				</div>
 
-				<hr className="border-gray-500/30 my-5" />
+				<hr className="border-gray-300 my-5" />
 
-				{/* Order Summary */}
+				{/* Order Totals */}
 				<div className="space-y-4">
 					<div className="flex justify-between text-base font-medium">
 						<p className="uppercase text-gray-600">Items {getCartCount()}</p>
 						<p className="text-gray-800">
 							{currency}
-							{getCartAmount()}
+							{subtotal}
 						</p>
 					</div>
 					<div className="flex justify-between">
-						<p className="text-gray-600">Shipping Fee</p>
-						<p className="font-medium text-gray-800">Free</p>
+						<p className="text-gray-600">Discount</p>
+						<p className="font-medium text-green-600">
+							-{currency}
+							{discount}
+						</p>
 					</div>
 					<div className="flex justify-between">
 						<p className="text-gray-600">Tax (2%)</p>
 						<p className="font-medium text-gray-800">
 							{currency}
-							{Math.floor(getCartAmount() * 0.02)}
+							{tax}
 						</p>
 					</div>
 					<div className="flex justify-between text-lg md:text-xl font-medium border-t pt-3">
 						<p>Total</p>
 						<p>
 							{currency}
-							{getCartAmount() + Math.floor(getCartAmount() * 0.02)}
+							{total}
 						</p>
 					</div>
 				</div>
@@ -290,7 +330,7 @@ const OrderSummary = () => {
 
 			<button
 				onClick={createOrder}
-				className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700"
+				className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700 rounded-md"
 			>
 				Place Order
 			</button>
