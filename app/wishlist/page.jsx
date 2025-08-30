@@ -9,18 +9,21 @@ import toast from "react-hot-toast";
 const Wishlist = () => {
 	const { router, products, wishlist, toggleWishlist } = useAppContext();
 
-	// Compute wishlistProducts directly each render
+	// Compute wishlistProducts safely
 	const wishlistProducts = wishlist
 		.map((idOrObj) =>
 			products.find(
 				(p) =>
-					p && p._id === (typeof idOrObj === "string" ? idOrObj : idOrObj._id)
+					p &&
+					idOrObj &&
+					p._id === (typeof idOrObj === "string" ? idOrObj : idOrObj._id)
 			)
 		)
-		.filter(Boolean);
+		.filter(Boolean); // removes nulls
 
 	const handleRemove = (product) => {
-		toggleWishlist(product); // updates context + DB
+		if (!product) return; // safety
+		toggleWishlist(product);
 		toast.success("Removed from wishlist");
 	};
 
