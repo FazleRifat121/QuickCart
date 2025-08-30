@@ -10,8 +10,16 @@ import toast from "react-hot-toast";
 import { MdDashboard } from "react-icons/md";
 
 const Navbar = () => {
-	const { isSeller, router, user, wishlist } = useAppContext();
+	const { isSeller, router, user, wishlist, cartItems, userData } =
+		useAppContext();
+
 	const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
+	const cartCount = cartItems
+		? Object.values(cartItems).reduce((sum, q) => sum + q, 0)
+		: 0;
+	const orderCount =
+		userData && Array.isArray(userData.orders) ? userData.orders.length : 0;
+
 	const { openSignIn } = useClerk();
 	const [showSearch, setShowSearch] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -21,11 +29,7 @@ const Navbar = () => {
 	const handleSearchChange = async (e) => {
 		const query = e.target.value;
 		setSearchQuery(query);
-
-		if (!query) {
-			setSearchResults([]);
-			return;
-		}
+		if (!query) return setSearchResults([]);
 
 		try {
 			const { data } = await axios.get(
@@ -48,7 +52,7 @@ const Navbar = () => {
 
 	return (
 		<nav className="flex flex-col md:flex-row items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300 text-gray-700 relative">
-			{/* Logo and mobile icons */}
+			{/* Logo + Mobile Icons */}
 			<div className="flex items-center w-full md:w-auto justify-between">
 				<Image
 					className="cursor-pointer w-28 md:w-32"
@@ -57,7 +61,7 @@ const Navbar = () => {
 					alt="logo"
 				/>
 
-				{/* Mobile search + user icons */}
+				{/* Mobile icons */}
 				<div className="md:hidden flex items-center gap-3">
 					<Image
 						className="w-5 h-5 cursor-pointer"
@@ -73,31 +77,21 @@ const Navbar = () => {
 									labelIcon={<HomeIcon />}
 									onClick={() => router.push("/")}
 								/>
-							</UserButton.MenuItems>
-							<UserButton.MenuItems>
 								<UserButton.Action
 									label="Products"
 									labelIcon={<BoxIcon />}
 									onClick={() => router.push("/all-products")}
 								/>
-							</UserButton.MenuItems>
-							<UserButton.MenuItems>
 								<UserButton.Action
 									label="Cart"
 									labelIcon={<CartIcon />}
 									onClick={() => router.push("/cart")}
 								/>
-							</UserButton.MenuItems>
-							<UserButton.MenuItems>
 								<UserButton.Action
 									label="My Orders"
 									labelIcon={<BagIcon />}
 									onClick={() => router.push("/my-orders")}
 								/>
-							</UserButton.MenuItems>
-
-							{/* Wishlist item for mobile */}
-							<UserButton.MenuItems>
 								<UserButton.Action
 									label="Wishlist"
 									labelIcon={
@@ -116,18 +110,14 @@ const Navbar = () => {
 									}
 									onClick={() => router.push("/wishlist")}
 								/>
-							</UserButton.MenuItems>
-
-							{/* Seller Dashboard for small devices */}
-							{isSeller && (
-								<UserButton.MenuItems>
+								{isSeller && (
 									<UserButton.Action
 										label="Seller Dashboard"
 										labelIcon={<MdDashboard size={24} />}
 										onClick={() => router.push("/seller")}
 									/>
-								</UserButton.MenuItems>
-							)}
+								)}
+							</UserButton.MenuItems>
 						</UserButton>
 					) : (
 						<button
@@ -159,7 +149,6 @@ const Navbar = () => {
 						className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
 
-					{/* Search results dropdown */}
 					{searchResults.length > 0 && (
 						<div className="absolute bg-white border w-full md:w-64 mt-1 max-h-64 overflow-y-auto rounded shadow z-50">
 							{searchResults.map((product) => (
@@ -202,8 +191,6 @@ const Navbar = () => {
 				<Link href="/" className="hover:text-gray-900 transition">
 					Contact
 				</Link>
-
-				{/* Seller Dashboard for large devices */}
 				{isSeller && (
 					<button
 						onClick={() => router.push("/seller")}
@@ -214,8 +201,8 @@ const Navbar = () => {
 				)}
 			</div>
 
-			{/* Desktop user icon */}
-			<ul className="hidden md:flex items-center gap-4 ">
+			{/* Desktop user + counts */}
+			<ul className="hidden md:flex items-center gap-4">
 				<Image
 					className="w-4 h-4 cursor-pointer"
 					src={assets.search_icon}
@@ -225,20 +212,37 @@ const Navbar = () => {
 				{user ? (
 					<UserButton>
 						<UserButton.MenuItems>
+							{/* Cart */}
 							<UserButton.Action
 								label="Cart"
-								labelIcon={<CartIcon />}
+								labelIcon={
+									<div className="relative">
+										<CartIcon className="w-5 h-5" />
+										{cartCount > 0 && (
+											<span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-semibold rounded-full px-1.5">
+												{cartCount}
+											</span>
+										)}
+									</div>
+								}
 								onClick={() => router.push("/cart")}
 							/>
-						</UserButton.MenuItems>
-						<UserButton.MenuItems>
+							{/* Orders */}
 							<UserButton.Action
 								label="My Orders"
-								labelIcon={<BagIcon />}
+								labelIcon={
+									<div className="relative">
+										<BagIcon className="w-5 h-5" />
+										{orderCount > 0 && (
+											<span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-semibold rounded-full px-1.5">
+												{orderCount}
+											</span>
+										)}
+									</div>
+								}
 								onClick={() => router.push("/my-orders")}
 							/>
-						</UserButton.MenuItems>
-						<UserButton.MenuItems>
+							{/* Wishlist */}
 							<UserButton.Action
 								label="Wishlist"
 								labelIcon={

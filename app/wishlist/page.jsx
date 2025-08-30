@@ -10,16 +10,18 @@ const Wishlist = () => {
 	const { router, products, wishlist, toggleWishlist } = useAppContext();
 
 	// Compute wishlistProducts safely
-	const wishlistProducts = wishlist
-		.map((idOrObj) =>
-			products.find(
-				(p) =>
-					p &&
-					idOrObj &&
-					p._id === (typeof idOrObj === "string" ? idOrObj : idOrObj._id)
-			)
-		)
-		.filter(Boolean); // removes nulls
+	const wishlistProducts = Array.isArray(wishlist)
+		? wishlist
+				.map((idOrObj) =>
+					products.find(
+						(p) =>
+							p &&
+							idOrObj &&
+							p._id === (typeof idOrObj === "string" ? idOrObj : idOrObj._id)
+					)
+				)
+				.filter(Boolean)
+		: [];
 
 	const handleRemove = (product) => {
 		if (!product) return; // safety
@@ -57,19 +59,17 @@ const Wishlist = () => {
 								</tr>
 							</thead>
 							<tbody>
-								{wishlistProducts.map((product) => (
-									<tr key={product._id}>
+								{wishlistProducts.map((product, index) => (
+									<tr key={`${product._id}-${index}`}>
 										<td className="flex items-center gap-4 py-4 md:px-4 px-1">
-											<div>
-												<div className="rounded-lg overflow-hidden bg-gray-500/10 p-2">
-													<Image
-														src={product.image[0]}
-														alt={product.name}
-														className="w-16 h-16 md:w-20 md:h-auto object-cover mix-blend-multiply"
-														width={80}
-														height={80}
-													/>
-												</div>
+											<div className="rounded-lg overflow-hidden bg-gray-500/10 p-2">
+												<Image
+													src={product.image[0]}
+													alt={product.name}
+													className="w-16 h-16 md:w-20 md:h-auto object-cover mix-blend-multiply"
+													width={80}
+													height={80}
+												/>
 											</div>
 											<div className="text-sm">
 												<p className="text-gray-800">{product.name}</p>
