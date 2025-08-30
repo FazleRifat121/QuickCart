@@ -179,6 +179,9 @@ const Navbar = () => {
 				<Link href="/" className="hover:text-gray-900 transition">
 					Contact
 				</Link>
+				<Link href="/wishlist" className="hover:text-gray-900 transition">
+					Wishlist
+				</Link>
 
 				{/* Seller Dashboard for large devices */}
 				{isSeller && (
