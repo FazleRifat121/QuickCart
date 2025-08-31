@@ -9,16 +9,19 @@ import toast from "react-hot-toast";
 const Wishlist = () => {
 	const { router, products, wishlist = [], toggleWishlist } = useAppContext();
 
-	// Compute wishlistProducts safely
+	// Safely map wishlist to product objects
 	const wishlistProducts = Array.isArray(wishlist)
 		? wishlist
-				.map((idOrObj) =>
-					products.find((p) => p && p._id === (idOrObj._id || idOrObj))
-				)
-				.filter(Boolean)
-		: []; // filter out any undefined values
+				.map((idOrObj) => {
+					if (!idOrObj) return null; // safety check
+					return products.find((p) => p && p._id === (idOrObj._id || idOrObj));
+				})
+				.filter(Boolean) // remove undefined/null entries
+		: [];
+
+	// Remove product from wishlist
 	const handleRemove = (product) => {
-		if (!product) return; // safety
+		if (!product) return;
 		toggleWishlist(product);
 		toast.success("Removed from wishlist");
 	};
@@ -37,54 +40,66 @@ const Wishlist = () => {
 						</p>
 					</div>
 
-					<div className="overflow-x-auto w-full">
-						<table className="min-w-full table-auto">
-							<thead className="text-left">
-								<tr>
-									<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
-										Product Details
-									</th>
-									<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
-										Price
-									</th>
-									<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
-										Action
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{wishlistProducts.map((product, index) => (
-									<tr key={`${product._id}-${index}`}>
-										<td className="flex items-center gap-4 py-4 md:px-4 px-1">
-											<div className="rounded-lg overflow-hidden bg-gray-500/10 p-2">
-												<Image
-													src={product.image[0]}
-													alt={product.name}
-													className="w-16 h-16 md:w-20 md:h-auto object-cover mix-blend-multiply"
-													width={80}
-													height={80}
-												/>
-											</div>
-											<div className="text-sm">
-												<p className="text-gray-800">{product.name}</p>
-											</div>
-										</td>
-										<td className="py-4 md:px-4 px-1 text-gray-600">
-											${product.offerPrice}
-										</td>
-										<td className="py-4 md:px-4 px-1">
-											<button
-												onClick={() => handleRemove(product)}
-												className="text-xs text-red-500 hover:underline"
-											>
-												Remove
-											</button>
-										</td>
+					{wishlistProducts.length === 0 ? (
+						<p className="text-gray-500">Your wishlist is empty.</p>
+					) : (
+						<div className="overflow-x-auto w-full">
+							<table className="min-w-full table-auto">
+								<thead className="text-left">
+									<tr>
+										<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
+											Product Details
+										</th>
+										<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
+											Price
+										</th>
+										<th className="pb-6 md:px-4 px-1 text-gray-600 font-medium">
+											Action
+										</th>
 									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
+								</thead>
+								<tbody>
+									{wishlistProducts.map((product, index) => (
+										<tr key={`${product._id}-${index}`}>
+											<td className="flex items-center gap-4 py-4 md:px-4 px-1">
+												<div className="rounded-lg overflow-hidden bg-gray-500/10 p-2">
+													<Image
+														src={product.image[0]}
+														alt={product.name}
+														className="w-16 h-16 md:w-20 md:h-auto object-cover mix-blend-multiply"
+														width={80}
+														height={80}
+													/>
+												</div>
+												<div className="text-sm">
+													<button
+														onClick={() =>
+															router.push("/product/" + product._id)
+														}
+														className="text-gray-800 hover:underline"
+													>
+														{product.name}
+													</button>
+												</div>
+											</td>
+
+											<td className="py-4 md:px-4 px-1 text-gray-600">
+												${product.offerPrice}
+											</td>
+											<td className="py-4 md:px-4 px-1">
+												<button
+													onClick={() => handleRemove(product)}
+													className="text-xs text-red-500 hover:underline"
+												>
+													Remove
+												</button>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
 
 					<button
 						onClick={() => router.push("/all-products")}

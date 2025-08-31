@@ -14,17 +14,21 @@ const ProductCard = ({ product }) => {
 		wishlist.some(
 			(p) => p && (p._id ? p._id === product._id : p === product._id)
 		);
-	const handleWishlistClick = (e) => {
+	const handleWishlistClick = async (e) => {
 		e.stopPropagation();
 
 		if (!user) return toast.error("Login to add to wishlist");
-		if (!product || !product._id) return; // ✅ safety check
+		if (!product || !product._id) return;
 
-		toggleWishlist(product);
+		const exists = wishlist.includes(product._id);
 
-		// Show toast based on new state
-		if (!isWish) toast.success("Added to wishlist");
-		else toast.success("Removed from wishlist");
+		await toggleWishlist(product);
+
+		if (exists) {
+			toast.success("Removed from wishlist");
+		} else {
+			toast.success("Added to wishlist");
+		}
 	};
 
 	return (

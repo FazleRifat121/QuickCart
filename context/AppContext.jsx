@@ -19,10 +19,9 @@ export const AppContextProvider = ({ children }) => {
 	const [isSeller, setIsSeller] = useState(false);
 	const [cartItems, setCartItems] = useState({});
 	const [wishlist, setWishlist] = useState([]);
-
 	const [orders, setOrders] = useState([]);
 
-	// -------- PRODUCTS --------
+	// -------- FETCH PRODUCTS --------
 	const fetchProductData = async () => {
 		try {
 			const { data } = await axios.get("/api/product/list");
@@ -32,27 +31,26 @@ export const AppContextProvider = ({ children }) => {
 		}
 	};
 
-	// -------- USER DATA --------
+	// -------- FETCH USER DATA --------
 	const fetchUserData = async () => {
+		if (!user) return;
 		try {
-			if (user?.publicMetadata?.role === "seller") setIsSeller(true);
-
 			const token = await getToken();
 			const { data } = await axios.get("/api/user/data", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-
 			if (data.success) {
 				setUserData(data.user);
 				setCartItems(data.user.cartItems || {});
 				setWishlist(data.user.wishlist || []);
+				if (user?.publicMetadata?.role === "seller") setIsSeller(true);
 			}
 		} catch (err) {
 			toast.error(err.message);
 		}
 	};
 
-	// -------- ORDERS --------
+	// -------- FETCH ORDERS --------
 	const fetchOrders = async () => {
 		if (!user) return;
 		try {
@@ -60,9 +58,7 @@ export const AppContextProvider = ({ children }) => {
 			const { data } = await axios.get("/api/order/list", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-
 			if (data.success) {
-				// ✅ Map backend order.items to frontend-friendly format
 				const mappedOrders = data.orders.map((order) => ({
 					_id: order._id,
 					amount: order.amount,
@@ -112,57 +108,6 @@ export const AppContextProvider = ({ children }) => {
 			}, 0) * 100
 		) / 100;
 
-	// -------- WISHLIST --------
-	const toggleWishlist = async (product) => {
-		if (!product || !product._id) return; // ✅ ignore invalid entries
-
-		const exists = wishlist.some((p) => p && p._id === product._id);
-		const updated = exists
-			? wishlist.filter((p) => p && p._id !== product._id)
-			: [...wishlist.filter(Boolean), product]; // remove nulls
-
-		setWishlist(updated);
-
-		if (user) {
-			try {
-				const token = await getToken();
-				await axios.post(
-					"/api/wishlist/update",
-					{ wishlist: updated.map((p) => p._id) },
-					{ headers: { Authorization: `Bearer ${token}` } }
-				);
-			} catch (err) {
-				console.log("Wishlist DB update error:", err.message);
-			}
-		} else {
-			localStorage.setItem("wishlist", JSON.stringify(updated));
-		}
-	};
-	// -------- Local Wishlist --------
-	useEffect(() => {
-		const loadWishlist = async () => {
-			if (user) {
-				await fetchUserData();
-				try {
-					const token = await getToken();
-					const res = await fetch("/api/wishlist/get", {
-						headers: { Authorization: `Bearer ${token}` },
-					});
-					const data = await res.json();
-					if (data.success)
-						setWishlist(Array.isArray(data.wishlist) ? data.wishlist : []);
-				} catch (err) {
-					console.log("Wishlist fetch error:", err.message);
-				}
-			} else {
-				const stored = localStorage.getItem("wishlist");
-				setWishlist(stored ? JSON.parse(stored) : []);
-			}
-		};
-		loadWishlist();
-	}, [user]);
-
-	// -------- CART QUANTITY UPDATE --------
 	const updateCartQuantity = async (itemId, quantity) => {
 		const updatedCart = { ...cartItems };
 		if (quantity <= 0) delete updatedCart[itemId];
@@ -183,6 +128,60 @@ export const AppContextProvider = ({ children }) => {
 			}
 		}
 	};
+
+	// -------- WISHLIST --------
+	const toggleWishlist = async (product) => {
+		if (!product || !product._id) return;
+
+		let updatedWishlist;
+		const exists = wishlist.includes(product._id);
+
+		if (exists) {
+			updatedWishlist = wishlist.filter((id) => id !== product._id);
+		} else {
+			updatedWishlist = [...wishlist, product._id];
+		}
+
+		setWishlist(updatedWishlist);
+
+		if (user) {
+			try {
+				const token = await getToken();
+				await axios.post(
+					"/api/wishlist/update",
+					{ wishlist: updatedWishlist },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+			} catch (err) {
+				console.log("Wishlist DB update error:", err.message);
+			}
+		} else {
+			localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
+		}
+	};
+
+	// -------- LOAD WISHLIST --------
+	useEffect(() => {
+		const loadWishlist = async () => {
+			if (user) {
+				try {
+					const token = await getToken();
+					const res = await fetch("/api/wishlist/get", {
+						headers: { Authorization: `Bearer ${token}` },
+					});
+					const data = await res.json();
+					setWishlist(Array.isArray(data.wishlist) ? data.wishlist : []);
+				} catch (err) {
+					console.log("Wishlist fetch error:", err.message);
+					setWishlist([]);
+				}
+			} else {
+				const stored = localStorage.getItem("wishlist");
+				setWishlist(stored ? JSON.parse(stored) : []);
+			}
+		};
+		loadWishlist();
+	}, [user]);
 
 	// -------- EFFECTS --------
 	useEffect(() => {

@@ -7,8 +7,7 @@ const userSchema = new mongoose.Schema(
 		email: { type: String, required: true, unique: true },
 		imageUrl: { type: String, required: true },
 		cartItems: { type: Object, default: {} },
-		wishlist: { type: Object, default: {} },
-		orders: { type: Object, default: {} },
+		orders: { type: Array, default: [] },
 	},
 	{ minimize: false }
 );
