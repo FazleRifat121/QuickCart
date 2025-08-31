@@ -140,10 +140,10 @@ const AddProduct = () => {
 							defaultValue={category}
 						>
 							<option value="Three Piece">Three Piece</option>
-							<option value="Earphone">Earphone</option>
+							<option value="Lawn">Lawn</option>
 							<option value="Salwar Kameez">Salwar Kameez</option>
-							<option value="Watch">Watch</option>
-							<option value="Smartphone">Smartphone</option>
+							<option value="Kurti">Kurti</option>
+							<option value="Silk">Silk</option>
 							<option value="Laptop">Laptop</option>
 							<option value="Camera">Camera</option>
 							<option value="Accessories">Accessories</option>
