@@ -11,15 +11,24 @@ import { useEffect, useState } from "react";
 
 const Product = () => {
 	const { id } = useParams();
-
 	const { products, router, addToCart } = useAppContext();
 
 	const [mainImage, setMainImage] = useState(null);
+	const [fade, setFade] = useState(true);
 	const [productData, setProductData] = useState(null);
 
 	const fetchProductData = async () => {
 		const product = products.find((product) => product._id === id);
 		setProductData(product);
+	};
+
+	const handleThumbnailClick = (image) => {
+		// Fade out, change image, then fade in
+		setFade(false);
+		setTimeout(() => {
+			setMainImage(image);
+			setFade(true);
+		}, 200);
 	};
 
 	useEffect(() => {
@@ -34,9 +43,12 @@ const Product = () => {
 					<div className="px-5 lg:px-16 xl:px-20">
 						<div className="rounded-lg overflow-hidden bg-gray-500/10 mb-4">
 							<Image
+								key={mainImage || productData.image[0]}
 								src={mainImage || productData.image[0]}
 								alt="alt"
-								className="w-full h-auto object-cover mix-blend-multiply"
+								className={`w-full h-auto object-cover mix-blend-multiply transition-opacity duration-500 ease-in-out ${
+									fade ? "opacity-100" : "opacity-0"
+								}`}
 								width={1280}
 								height={720}
 							/>
@@ -46,7 +58,7 @@ const Product = () => {
 							{productData.image.map((image, index) => (
 								<div
 									key={index}
-									onClick={() => setMainImage(image)}
+									onClick={() => handleThumbnailClick(image)}
 									className="cursor-pointer rounded-lg overflow-hidden bg-gray-500/10"
 								>
 									<Image
@@ -160,7 +172,10 @@ const Product = () => {
 							<ProductCard key={index} product={product} />
 						))}
 					</div>
-					<button className="px-8 py-2 mb-16 border rounded text-gray-500/70 hover:bg-slate-50/90 transition">
+					<button
+						onClick={() => router.push("/all-products")}
+						className="px-8 py-2 mb-16 border rounded text-gray-500/70 hover:bg-slate-50/90 transition"
+					>
 						See more
 					</button>
 				</div>
