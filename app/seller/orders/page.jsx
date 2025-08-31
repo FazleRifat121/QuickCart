@@ -7,6 +7,7 @@ import Footer from "@/components/seller/Footer";
 import Loading from "@/components/Loading";
 import axios from "axios";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 const Orders = () => {
 	const { currency, user, getToken } = useAppContext();
@@ -29,6 +30,27 @@ const Orders = () => {
 		}
 	};
 
+	// Update order status (Delivered / Undo)
+	const updateOrderStatus = async (orderId, status) => {
+		try {
+			const token = await getToken();
+			const { data } = await axios.put(
+				"/api/order/update-status",
+				{ orderId, status },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+
+			if (data.success) {
+				toast.success("Order status updated!");
+				fetchSellerOrders(); // refresh list
+			} else {
+				toast.error(data.message);
+			}
+		} catch (error) {
+			toast.error(error.message);
+		}
+	};
+
 	useEffect(() => {
 		if (user) fetchSellerOrders();
 	}, [user]);
@@ -44,10 +66,11 @@ const Orders = () => {
 						{orders.map((order, index) => (
 							<div
 								key={index}
-								className={`flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300 ${
-									order.status === "Canceled" ? "bg-red-50" : ""
-								}`}
+								className={`flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300 
+                  ${order.status === "Canceled" ? "bg-red-50" : ""}
+                  ${order.status === "Delivered" ? "bg-green-100" : ""}`}
 							>
+								{/* --- Product Info --- */}
 								<div className="flex-1 flex gap-5 max-w-80">
 									<Image
 										className="max-w-16 max-h-16 object-cover"
@@ -56,17 +79,22 @@ const Orders = () => {
 									/>
 									<p className="flex flex-col gap-3">
 										<span className="font-medium">
-											{order.items
-												.map((item) =>
-													item.product
-														? `${item.product.name} x ${item.quantity}`
-														: `Unknown Product x ${item.quantity}`
-												)
-												.join(", ")}
+											{/* ✅ Map items with links */}
+											{order.items.map((item, idx) => (
+												<Link
+													key={idx}
+													href={`/product/${item.product._id}`}
+													className="text-blue-600 hover:underline mr-2"
+												>
+													{item.product.name} x {item.quantity}
+												</Link>
+											))}
 										</span>
 										<span>Items : {order.items.length}</span>
 									</p>
 								</div>
+
+								{/* --- Address --- */}
 								<div>
 									<p>
 										<span className="font-medium">
@@ -80,10 +108,14 @@ const Orders = () => {
 										<span>{order.address.phoneNumber}</span>
 									</p>
 								</div>
+
+								{/* --- Amount --- */}
 								<p className="font-medium my-auto">
 									{currency}
 									{order.amount}
 								</p>
+
+								{/* --- Status + Delivery --- */}
 								<div>
 									<p className="flex flex-col">
 										<span>Method : COD</span>
@@ -91,7 +123,38 @@ const Orders = () => {
 											Date : {new Date(order.date).toLocaleDateString()}
 										</span>
 										<span>Status : {order.status}</span>
+										{order.deliveredAt && (
+											<span>
+												Delivered On:{" "}
+												{new Date(order.deliveredAt).toLocaleDateString()}
+											</span>
+										)}
 									</p>
+
+									{/* ✅ Action Button */}
+									{order.status !== "Canceled" && (
+										<div>
+											{order.status !== "Delivered" ? (
+												<button
+													onClick={() =>
+														updateOrderStatus(order._id, "Delivered")
+													}
+													className="mt-2 px-3 py-1 text-white bg-green-600 rounded-md hover:bg-green-700"
+												>
+													Mark as Done
+												</button>
+											) : (
+												<button
+													onClick={() =>
+														updateOrderStatus(order._id, "Order Placed")
+													}
+													className="mt-2 px-3 py-1 text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+												>
+													Undo Done
+												</button>
+											)}
+										</div>
+									)}
 								</div>
 							</div>
 						))}

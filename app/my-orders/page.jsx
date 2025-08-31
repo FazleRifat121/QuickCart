@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
+import Link from "next/link";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -57,14 +58,30 @@ const MyOrders = () => {
 									{order.amount}
 								</p>
 								<p>Status: {order.status}</p>
-								{order.status !== "Canceled" && (
-									<button
-										onClick={() => handleCancelOrder(order._id)}
-										className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-									>
-										Cancel Order
-									</button>
-								)}
+
+								{/* ✅ Show each item with link */}
+								<div className="mt-2">
+									{order.items.map((item, idx) => (
+										<p key={idx} className="text-sm">
+											<Link
+												href={`/product/${item.productId}`}
+												className="text-blue-600 hover:underline"
+											>
+												{item.name} x {item.quantity}
+											</Link>
+										</p>
+									))}
+								</div>
+
+								{order.status !== "Canceled" &&
+									order.status !== "Delivered" && (
+										<button
+											onClick={() => handleCancelOrder(order._id)}
+											className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+										>
+											Cancel Order
+										</button>
+									)}
 							</div>
 						</div>
 					))

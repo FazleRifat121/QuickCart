@@ -60,7 +60,21 @@ export const AppContextProvider = ({ children }) => {
 			const { data } = await axios.get("/api/order/list", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			if (data.success) setOrders(data.orders.reverse());
+
+			if (data.success) {
+				// ✅ Map backend order.items to frontend-friendly format
+				const mappedOrders = data.orders.map((order) => ({
+					_id: order._id,
+					amount: order.amount,
+					status: order.status,
+					items: order.items.map((item) => ({
+						productId: item.product?._id || "",
+						name: item.product?.name || "Unknown Product",
+						quantity: item.quantity,
+					})),
+				}));
+				setOrders(mappedOrders.reverse());
+			}
 		} catch (err) {
 			console.log(err.message);
 		}
