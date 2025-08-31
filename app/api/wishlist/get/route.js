@@ -1,22 +1,29 @@
-import connectDB from "@/config/db";
-import User from "@/models/User";
 import { getAuth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import Product from "@/models/product"; // Your Product model
+import Wishlist from "@/models/wishlist";
+import connectDB from "@/config/db";
 
-export async function GET(request) {
+export async function GET(req) {
+	await connectDB();
+	const { userId } = getAuth(req);
+
+	if (!userId)
+		return new Response(
+			JSON.stringify({ success: false, message: "Unauthorized" }),
+			{ status: 401 }
+		);
+
 	try {
-		const { userId } = getAuth(request);
-		await connectDB();
-
-		const user = await User.findById(userId).populate("wishlist");
-		if (!user)
-			return NextResponse.json({ success: false, message: "User not found" });
-
-		return NextResponse.json({ success: true, wishlist: user.wishlist });
-	} catch (error) {
-		return NextResponse.json(
-			{ success: false, message: error.message },
+		const wishlist = await Wishlist.findOne({ userId });
+		return new Response(
+			JSON.stringify({
+				success: true,
+				wishlist: wishlist ? wishlist.items : [],
+			}),
+			{ status: 200 }
+		);
+	} catch (err) {
+		return new Response(
+			JSON.stringify({ success: false, message: err.message }),
 			{ status: 500 }
 		);
 	}
