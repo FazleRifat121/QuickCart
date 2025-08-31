@@ -18,6 +18,7 @@ export async function GET(request) {
 				{ name: { $regex: query, $options: "i" } },
 				{ category: { $regex: query, $options: "i" } },
 				{ brand: { $regex: query, $options: "i" } },
+				{ color: { $regex: query, $options: "i" } },
 			],
 		}).limit(10);
 
