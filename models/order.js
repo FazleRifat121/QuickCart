@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
 	items: [
 		{
 			product: {
-				type: String,
+				type: mongoose.Schema.Types.ObjectId,
 				required: true,
 				ref: "Product",
 			},
@@ -20,12 +20,9 @@ const orderSchema = new mongoose.Schema({
 	},
 	status: { type: String, default: "Order Placed" },
 	date: { type: Number, required: true },
-
-	// ✅ Add cancelAt field for TTL (auto-delete)
 	cancelAt: { type: Date, default: null },
 });
 
-// ✅ TTL index: removes documents automatically when cancelAt is reached
 orderSchema.index({ cancelAt: 1 }, { expireAfterSeconds: 0 });
 
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
