@@ -54,13 +54,38 @@ const Orders = () => {
 	// Filtered orders based on search
 	const filteredOrders = orders.filter((order) => {
 		const search = searchTerm.toLowerCase();
+
+		const productMatch = order.items.some((item) =>
+			item.product.name.toLowerCase().includes(search)
+		);
+
+		const nameMatch = order.address.fullName.toLowerCase().includes(search);
+
+		const phoneMatch = order.address.phoneNumber.toLowerCase().includes(search);
+
+		const statusMatch = order.status.toLowerCase().includes(search);
+
+		const methodMatch = order.paymentMethod
+			? order.paymentMethod.toLowerCase().includes(search)
+			: false;
+
+		const transactionMatch = order.transactionId
+			? order.transactionId.toLowerCase().includes(search)
+			: false;
+
+		const dateMatch = new Date(order.date)
+			.toLocaleDateString()
+			.toLowerCase()
+			.includes(search);
+
 		return (
-			order.items.some((item) =>
-				item.product.name.toLowerCase().includes(search)
-			) ||
-			order.address.fullName.toLowerCase().includes(search) ||
-			order.address.phoneNumber.toLowerCase().includes(search) ||
-			order.status.toLowerCase().includes(search)
+			productMatch ||
+			nameMatch ||
+			phoneMatch ||
+			statusMatch ||
+			methodMatch ||
+			transactionMatch ||
+			dateMatch
 		);
 	});
 
@@ -75,7 +100,7 @@ const Orders = () => {
 					{/* Search Box */}
 					<input
 						type="text"
-						placeholder="Search by product, name, phone, or status..."
+						placeholder="Search by product, name, phone, status, date, method or transaction ID..."
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						className="w-full max-w-md p-2 border rounded-md mb-4"
@@ -135,10 +160,7 @@ const Orders = () => {
 									</p>
 
 									{/* Status + Payment */}
-									{/* Status + Payment */}
 									<div className="flex flex-col justify-between w-48">
-										{" "}
-										{/* Add fixed width */}
 										<p className="flex flex-col">
 											<span>
 												Method:{" "}
