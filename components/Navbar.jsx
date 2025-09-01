@@ -20,9 +20,7 @@ const Navbar = () => {
 		? Object.values(cartItems).reduce((sum, q) => sum + q, 0)
 		: 0;
 
-	// Use context orders for reactive count
 	const [orderCount, setOrderCount] = useState(orders ? orders.length : 0);
-
 	useEffect(() => {
 		setOrderCount(orders ? orders.length : 0);
 	}, [orders]);
@@ -33,7 +31,6 @@ const Navbar = () => {
 	const [searchResults, setSearchResults] = useState([]);
 
 	useEffect(() => setMounted(true), []);
-
 	if (!mounted) return null;
 
 	const handleSearchChange = async (e) => {
@@ -69,7 +66,6 @@ const Navbar = () => {
 					className="cursor-pointer w-28 md:w-32"
 					onClick={() => router.push("/")}
 				/>
-
 				{/* Mobile buttons */}
 				<div className="md:hidden flex items-center gap-3">
 					<button onClick={() => setShowMobileMenu(true)}>
@@ -123,68 +119,6 @@ const Navbar = () => {
 					)}
 				</div>
 			</div>
-
-			{/* Mobile Slider */}
-			{showMobileMenu && (
-				<div className="fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-50 p-4 flex flex-col gap-4 animate-slide-in">
-					<button
-						onClick={() => setShowMobileMenu(false)}
-						className="self-end text-xl font-bold"
-					>
-						✕
-					</button>
-
-					{/* Search */}
-					<form onSubmit={handleSearchSubmit} className="relative w-full">
-						<input
-							type="text"
-							value={searchQuery}
-							onChange={handleSearchChange}
-							placeholder="Search products..."
-							className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-						{searchResults.length > 0 && (
-							<div className="absolute top-12 left-0 bg-white border w-full max-h-64 overflow-y-auto rounded shadow z-50">
-								{searchResults.map((product) => (
-									<div
-										key={product._id}
-										className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
-										onClick={() => {
-											router.push(`/product/${product._id}`);
-											setSearchQuery("");
-											setSearchResults([]);
-											setShowMobileMenu(false);
-										}}
-									>
-										<Image
-											src={product.image[0]}
-											alt={product.name}
-											width={40}
-											height={40}
-											className="object-cover rounded"
-										/>
-										<span>{product.name}</span>
-									</div>
-								))}
-							</div>
-						)}
-					</form>
-
-					{/* Links */}
-					<Link href="/" className="hover:text-gray-900 transition">
-						Home
-					</Link>
-					<Link href="/all-products" className="hover:text-gray-900 transition">
-						Shop
-					</Link>
-					<Link href="/about" className="hover:text-gray-900 transition">
-						About Us
-					</Link>
-					<Link href="/contact" className="hover:text-gray-900 transition">
-						Contact
-					</Link>
-				</div>
-			)}
 
 			{/* Desktop links and search */}
 			<div className="hidden md:flex flex-1 justify-center items-center gap-6">
