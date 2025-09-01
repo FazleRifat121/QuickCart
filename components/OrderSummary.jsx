@@ -5,6 +5,13 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import StripePayment from "./StripePayment";
+
+const stripePromise = loadStripe(
+	process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
 
 const OrderSummary = () => {
 	const {
@@ -22,39 +29,43 @@ const OrderSummary = () => {
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [userAddresses, setUserAddresses] = useState([]);
 	const [paymentMethod, setPaymentMethod] = useState("cod");
-	const [onlineOption, setOnlineOption] = useState("bkash");
+	const [onlineOption, setOnlineOption] = useState("");
 	const [promoCode, setPromoCode] = useState("");
 	const [discount, setDiscount] = useState(0);
 
-	// Fetch user addresses
+	const subtotal = getCartAmount();
+	const tax = Math.floor((subtotal - discount) * 0.02);
+	const total = subtotal - discount + tax;
+
+	useEffect(() => {
+		if (user) fetchUserAddresses();
+	}, [user]);
+
 	const fetchUserAddresses = async () => {
 		try {
 			const token = await getToken();
 			const { data } = await axios.get("/api/user/get-address", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-
 			if (data.success) {
 				setUserAddresses(data.addresses);
 				if (data.addresses.length > 0) setSelectedAddress(data.addresses[0]);
-			} else toast.error(data.message);
+			}
 		} catch (error) {
 			toast.error(error.message);
 		}
 	};
 
-	// Handle promo code
 	const applyPromo = () => {
 		if (promoCode.toLowerCase() === "save10") {
 			setDiscount(Math.floor(getCartAmount() * 0.1));
-			toast.success("Promo applied: 10% off!");
+			toast.success("Promo applied!");
 		} else {
 			setDiscount(0);
 			toast.error("Invalid promo code");
 		}
 	};
 
-	// Remove address
 	const handleRemoveAddress = async (e, addressId) => {
 		e.stopPropagation();
 		try {
@@ -63,7 +74,6 @@ const OrderSummary = () => {
 				headers: { Authorization: `Bearer ${token}` },
 				data: { addressId },
 			});
-
 			if (data.success) {
 				toast.success(data.message);
 				setUserAddresses((prev) => prev.filter((a) => a._id !== addressId));
@@ -74,62 +84,40 @@ const OrderSummary = () => {
 		}
 	};
 
-	// Create order
-	const createOrder = async () => {
+	// ✅ Fixed createOrder function
+	const createOrder = async (transactionId = null) => {
+		if (!selectedAddress) return toast.error("Select address");
+
+		const cartItemsArray = Object.keys(cartItems)
+			.map((key) => ({ product: key, quantity: cartItems[key] }))
+			.filter((item) => item.quantity > 0);
+
+		if (cartItemsArray.length === 0) return toast.error("Cart empty");
+
 		try {
-			if (!selectedAddress) return toast.error("Please select an address");
-
-			let cartItemsArray = Object.keys(cartItems).map((key) => ({
-				product: key,
-				quantity: cartItems[key],
-			}));
-			cartItemsArray = cartItemsArray.filter((item) => item.quantity > 0);
-			if (cartItemsArray.length === 0) return toast.error("Cart is empty");
-
 			const token = await getToken();
-			const { data } = await axios.post(
-				"/api/order/create",
-				{
-					address: selectedAddress._id,
-					items: cartItemsArray,
-					paymentMethod,
-					onlineOption: paymentMethod === "online" ? onlineOption : null,
-					discount,
-				},
-				{ headers: { Authorization: `Bearer ${token}` } }
-			);
+
+			const payload = {
+				address: selectedAddress._id,
+				items: cartItemsArray,
+				paymentMethod, // cod or online
+				paymentOption: paymentMethod === "cod" ? null : onlineOption, // bkash, nagad, stripe
+				transactionId: paymentMethod === "cod" ? null : transactionId || null,
+				discount,
+			};
+
+			const { data } = await axios.post("/api/order/create", payload, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
 
 			if (data.success) {
-				toast.success(data.message);
 				setCartItems({});
 				router.push("/order-placed");
 			} else toast.error(data.message);
-		} catch (error) {
-			toast.error(error.message);
+		} catch (err) {
+			toast.error(err.message);
 		}
 	};
-
-	useEffect(() => {
-		if (user) fetchUserAddresses();
-	}, [user]);
-	// bksah
-	const payOnBkash = async (userId) => {
-		console.log(userId);
-		try {
-			const { data } = await axios.post(
-				"/api/user/bkash-payment",
-				{ userId },
-				{ headers: { Authorization: `Bearer ${token}` } }
-			);
-		} catch (error) {
-			console.log(error.message);
-			toast.error(error.message);
-		}
-	};
-	// Totals
-	const subtotal = getCartAmount();
-	const tax = Math.floor((subtotal - discount) * 0.02);
-	const total = subtotal - discount + tax;
 
 	return (
 		<div className="w-full md:w-96 bg-gray-50 p-4 md:p-5 rounded-lg shadow-sm">
@@ -171,7 +159,6 @@ const OrderSummary = () => {
 								/>
 							</svg>
 						</button>
-
 						{isDropdownOpen && (
 							<ul className="absolute w-full max-h-60 overflow-y-auto bg-white border shadow-md mt-1 z-10 py-1.5 rounded-md">
 								{userAddresses.map((address) => (
@@ -233,16 +220,15 @@ const OrderSummary = () => {
 						</label>
 					</div>
 
-					{/* Online Payment Options */}
 					{paymentMethod === "online" && (
-						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm ">
-							<label className="flex items-center gap-2 cursor-pointer">
+						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm">
+							{/* <label className="flex items-center gap-2 cursor-pointer">
 								<input
 									type="radio"
 									name="onlineOption"
 									value="bkash"
 									checked={onlineOption === "bkash"}
-									onClick={() => payOnBkash(user.id)}
+									onChange={() => setOnlineOption("bkash")}
 								/>
 								<Image src={assets.bkash} alt="bKash" width={50} height={50} />
 								bKash
@@ -256,17 +242,26 @@ const OrderSummary = () => {
 									onChange={() => setOnlineOption("nagad")}
 								/>
 								Nagad
-							</label>
+							</label> */}
 							<label className="flex items-center gap-2">
 								<input
 									type="radio"
 									name="onlineOption"
-									value="card"
-									checked={onlineOption === "card"}
-									onChange={() => setOnlineOption("card")}
+									value="stripe"
+									checked={onlineOption === "stripe"}
+									onChange={() => setOnlineOption("stripe")}
 								/>
 								Visa / MasterCard
 							</label>
+
+							{onlineOption === "stripe" && (
+								<Elements stripe={stripePromise}>
+									<StripePayment
+										amount={total}
+										onSuccess={(transactionId) => createOrder(transactionId)}
+									/>
+								</Elements>
+							)}
 						</div>
 					)}
 				</div>
@@ -328,12 +323,15 @@ const OrderSummary = () => {
 				</div>
 			</div>
 
-			<button
-				onClick={createOrder}
-				className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700 rounded-md"
-			>
-				Place Order
-			</button>
+			{/* Place order */}
+			{!(paymentMethod === "online" && onlineOption === "stripe") && (
+				<button
+					onClick={() => createOrder()}
+					className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700 rounded-md"
+				>
+					Place Order
+				</button>
+			)}
 		</div>
 	);
 };

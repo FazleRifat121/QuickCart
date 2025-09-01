@@ -11,9 +11,9 @@ import Link from "next/link";
 
 const Orders = () => {
 	const { currency, user, getToken } = useAppContext();
-
 	const [orders, setOrders] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [searchTerm, setSearchTerm] = useState("");
 
 	const fetchSellerOrders = async () => {
 		try {
@@ -30,7 +30,6 @@ const Orders = () => {
 		}
 	};
 
-	// Update order status (Delivered / Undo)
 	const updateOrderStatus = async (orderId, status) => {
 		try {
 			const token = await getToken();
@@ -39,13 +38,10 @@ const Orders = () => {
 				{ orderId, status },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
-
 			if (data.success) {
 				toast.success("Order status updated!");
-				fetchSellerOrders(); // refresh list
-			} else {
-				toast.error(data.message);
-			}
+				fetchSellerOrders();
+			} else toast.error(data.message);
 		} catch (error) {
 			toast.error(error.message);
 		}
@@ -55,6 +51,19 @@ const Orders = () => {
 		if (user) fetchSellerOrders();
 	}, [user]);
 
+	// Filtered orders based on search
+	const filteredOrders = orders.filter((order) => {
+		const search = searchTerm.toLowerCase();
+		return (
+			order.items.some((item) =>
+				item.product.name.toLowerCase().includes(search)
+			) ||
+			order.address.fullName.toLowerCase().includes(search) ||
+			order.address.phoneNumber.toLowerCase().includes(search) ||
+			order.status.toLowerCase().includes(search)
+		);
+	});
+
 	return (
 		<div className="flex-1 h-screen overflow-scroll flex flex-col justify-between text-sm">
 			{loading ? (
@@ -62,102 +71,126 @@ const Orders = () => {
 			) : (
 				<div className="md:p-10 p-4 space-y-5">
 					<h2 className="text-lg font-medium">Orders</h2>
+
+					{/* Search Box */}
+					<input
+						type="text"
+						placeholder="Search by product, name, phone, or status..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						className="w-full max-w-md p-2 border rounded-md mb-4"
+					/>
+
 					<div className="max-w-4xl rounded-md">
-						{orders.map((order, index) => (
-							<div
-								key={index}
-								className={`flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300 
+						{filteredOrders.length > 0 ? (
+							filteredOrders.map((order, index) => (
+								<div
+									key={index}
+									className={`flex flex-col md:flex-row gap-5 justify-between p-5 border-t border-gray-300 
                   ${order.status === "Canceled" ? "bg-red-50" : ""}
                   ${order.status === "Delivered" ? "bg-green-100" : ""}`}
-							>
-								{/* --- Product Info --- */}
-								<div className="flex-1 flex gap-5 max-w-80">
-									<Image
-										className="max-w-16 max-h-16 object-cover"
-										src={assets.box_icon}
-										alt="box_icon"
-									/>
-									<p className="flex flex-col gap-3">
-										<span className="font-medium">
-											{/* ✅ Map items with links */}
-											{order.items.map((item, idx) => (
-												<Link
-													key={idx}
-													href={`/product/${item.product._id}`}
-													className="text-blue-600 hover:underline mr-2"
-												>
-													{item.product.name} x {item.quantity}
-												</Link>
-											))}
-										</span>
-										<span>Items : {order.items.length}</span>
-									</p>
-								</div>
-
-								{/* --- Address --- */}
-								<div>
-									<p>
-										<span className="font-medium">
-											{order.address.fullName}
-										</span>
-										<br />
-										<span>{order.address.area}</span>
-										<br />
-										<span>{`${order.address.city}, ${order.address.state}`}</span>
-										<br />
-										<span>{order.address.phoneNumber}</span>
-									</p>
-								</div>
-
-								{/* --- Amount --- */}
-								<p className="font-medium my-auto">
-									{currency}
-									{order.amount}
-								</p>
-
-								{/* --- Status + Delivery --- */}
-								<div>
-									<p className="flex flex-col">
-										<span>Method : COD</span>
-										<span>
-											Date : {new Date(order.date).toLocaleDateString()}
-										</span>
-										<span>Status : {order.status}</span>
-										{order.deliveredAt && (
-											<span>
-												Delivered On:{" "}
-												{new Date(order.deliveredAt).toLocaleDateString()}
+								>
+									{/* Product Info */}
+									<div className="flex-1 flex gap-5 max-w-80">
+										<Image
+											className="max-w-16 max-h-16 object-cover"
+											src={assets.box_icon}
+											alt="box_icon"
+										/>
+										<p className="flex flex-col gap-3">
+											<span className="font-medium">
+												{order.items.map((item, idx) => (
+													<Link
+														key={idx}
+														href={`/product/${item.product._id}`}
+														className="text-blue-600 hover:underline mr-2"
+													>
+														{item.product.name} x {item.quantity}
+													</Link>
+												))}
 											</span>
-										)}
+											<span>Items : {order.items.length}</span>
+										</p>
+									</div>
+
+									{/* Address */}
+									<div>
+										<p>
+											<span className="font-medium">
+												{order.address.fullName}
+											</span>
+											<br />
+											<span>{order.address.area}</span>
+											<br />
+											<span>{`${order.address.city}, ${order.address.state}`}</span>
+											<br />
+											<span>{order.address.phoneNumber}</span>
+										</p>
+									</div>
+
+									{/* Amount */}
+									<p className="font-medium my-auto">
+										{currency}
+										{order.amount}
 									</p>
 
-									{/* ✅ Action Button */}
-									{order.status !== "Canceled" && (
-										<div>
-											{order.status !== "Delivered" ? (
-												<button
-													onClick={() =>
-														updateOrderStatus(order._id, "Delivered")
-													}
-													className="mt-2 px-3 py-1 text-white bg-green-600 rounded-md hover:bg-green-700"
-												>
-													Mark as Done
-												</button>
-											) : (
-												<button
-													onClick={() =>
-														updateOrderStatus(order._id, "Order Placed")
-													}
-													className="mt-2 px-3 py-1 text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
-												>
-													Undo Done
-												</button>
+									{/* Status + Payment */}
+									{/* Status + Payment */}
+									<div className="flex flex-col justify-between w-48">
+										{" "}
+										{/* Add fixed width */}
+										<p className="flex flex-col">
+											<span>
+												Method:{" "}
+												{order.paymentMethod
+													? order.paymentMethod.toUpperCase()
+													: "N/A"}
+											</span>
+											{order.transactionId && (
+												<span className="break-all">
+													Transaction ID: {order.transactionId}
+												</span>
 											)}
-										</div>
-									)}
+											<span>
+												Date: {new Date(order.date).toLocaleDateString()}
+											</span>
+											<span>Status: {order.status}</span>
+											{order.deliveredAt && (
+												<span>
+													Delivered On:{" "}
+													{new Date(order.deliveredAt).toLocaleDateString()}
+												</span>
+											)}
+										</p>
+										{order.status !== "Canceled" && (
+											<div>
+												{order.status !== "Delivered" ? (
+													<button
+														onClick={() =>
+															updateOrderStatus(order._id, "Delivered")
+														}
+														className="mt-2 px-3 py-1 text-white bg-green-600 rounded-md hover:bg-green-700"
+													>
+														Mark as Done
+													</button>
+												) : (
+													<button
+														onClick={() =>
+															updateOrderStatus(order._id, "Order Placed")
+														}
+														className="mt-2 px-3 py-1 text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+													>
+														Undo Done
+													</button>
+												)}
+											</div>
+										)}
+									</div>
 								</div>
-							</div>
-						))}
+							))
+						) : (
+							<p className="text-gray-500">No matching orders found.</p>
+						)}
 					</div>
 				</div>
 			)}

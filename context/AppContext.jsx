@@ -59,17 +59,16 @@ export const AppContextProvider = ({ children }) => {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 			if (data.success) {
-				const mappedOrders = data.orders.map((order) => ({
-					_id: order._id,
-					amount: order.amount,
-					status: order.status,
+				// Store full order objects including paymentMethod & transactionId
+				const fullOrders = data.orders.map((order) => ({
+					...order, // keep all existing fields
 					items: order.items.map((item) => ({
 						productId: item.product?._id || "",
 						name: item.product?.name || "Unknown Product",
 						quantity: item.quantity,
 					})),
 				}));
-				setOrders(mappedOrders.reverse());
+				setOrders(fullOrders.reverse());
 			}
 		} catch (err) {
 			console.log(err.message);
@@ -191,7 +190,7 @@ export const AppContextProvider = ({ children }) => {
 	useEffect(() => {
 		if (user) {
 			fetchUserData();
-			fetchOrders();
+			fetchOrders(); // now full orders including paymentMethod & transactionId
 		}
 	}, [user]);
 

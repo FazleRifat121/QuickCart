@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
-	userId: { type: mongoose.Schema.Types.String, required: true, ref: "User" },
+	userId: { type: String, required: true, ref: "User" },
 	items: [
 		{
 			product: {
@@ -18,6 +18,9 @@ const orderSchema = new mongoose.Schema({
 		required: true,
 		ref: "Address",
 	},
+	paymentMethod: { type: String, enum: ["COD", "Online Paid"], default: "COD" },
+	paymentOption: { type: String, default: null }, // bkash, nagad, stripe, etc.
+	transactionId: { type: String, default: null },
 	status: { type: String, default: "Order Placed" },
 	date: { type: Number, required: true },
 	cancelAt: { type: Date, default: null },

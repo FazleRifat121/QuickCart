@@ -1,22 +1,23 @@
 import connectDB from "@/config/db";
-import Address from "@/models/address";
 import Order from "@/models/order";
-import Product from "@/models/product";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
+	await connectDB();
+
 	try {
 		const { userId } = getAuth(request);
-		await connectDB();
-		Address.length;
-		Product.length;
-
 		const orders = await Order.find({ userId })
+			.populate("items.product")
 			.populate("address")
-			.populate("items.product");
-		return NextResponse.json({ success: true, orders });
-	} catch (error) {
-		return NextResponse.json({ success: false, message: error.message });
+			.sort({ date: -1 });
+
+		return NextResponse.json({ success: true, orders }, { status: 200 });
+	} catch (err) {
+		return NextResponse.json(
+			{ success: false, message: err.message },
+			{ status: 500 }
+		);
 	}
 }
