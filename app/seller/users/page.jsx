@@ -6,25 +6,26 @@ import toast from "react-hot-toast";
 const UsersAdmin = () => {
 	const [users, setUsers] = useState([]);
 
-	// Fetch users from API
+	// Fetch all users from your API
 	const fetchUsers = async () => {
 		try {
 			const res = await axios.get("/api/admin/users");
 			if (res.data.success) setUsers(res.data.users);
 		} catch (err) {
-			toast.error(err.message);
+			toast.error(err.response?.data?.message || err.message);
 		}
 	};
 
-	// Toggle role: "nothing" <-> "seller"
+	// Toggle role between Normal ↔ Seller
 	const toggleRole = async (userId, currentRole) => {
-		const newRole = currentRole === "seller" ? "nothing" : "seller";
+		const newRole = currentRole === "Seller" ? "Normal" : "Seller";
 		try {
 			const res = await axios.patch("/api/admin/users", {
 				userId,
 				publicRole: newRole,
 			});
 			if (res.data.success) {
+				// Update UI
 				setUsers((prev) =>
 					prev.map((u) =>
 						u._id === userId
@@ -37,7 +38,7 @@ const UsersAdmin = () => {
 				);
 			}
 		} catch (err) {
-			toast.error(err.message);
+			toast.error(err.response?.data?.message || err.message);
 		}
 	};
 
@@ -65,13 +66,13 @@ const UsersAdmin = () => {
 							<tr key={user._id} className="text-center">
 								<td className="p-2 border">{user.name}</td>
 								<td className="p-2 border">{user.email}</td>
-								<td className="p-2 border">{user.publicRole || "nothing"}</td>
+								<td className="p-2 border">{user.publicRole || "Normal"}</td>
 								<td className="p-2 border">
 									<button
 										onClick={() => toggleRole(user._id, user.publicRole)}
 										className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
 									>
-										{user.publicRole === "seller"
+										{user.publicRole === "Seller"
 											? "Revoke Seller"
 											: "Make Seller"}
 									</button>

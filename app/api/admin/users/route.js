@@ -1,12 +1,44 @@
+// app/api/admin/users/route.js
 import connectDB from "@/config/db";
 import User from "@/models/User";
-import { clerkClient } from "@clerk/nextjs/server";
+import { Clerk } from "@clerk/clerk-sdk-node";
 
-export async function GET() {
+const clerk = new Clerk({ apiKey: process.env.CLERK_API_KEY });
+
+export async function PATCH(req) {
 	try {
 		await connectDB();
-		const users = await User.find({}, "-cartItems");
-		return new Response(JSON.stringify({ success: true, users }), {
+		const { userId, publicRole } = await req.json();
+
+		if (!userId || !publicRole) {
+			return new Response(
+				JSON.stringify({ success: false, message: "Missing fields" }),
+				{
+					status: 400,
+				}
+			);
+		}
+
+		// Update MongoDB
+		const user = await User.findByIdAndUpdate(
+			userId,
+			{ publicRole },
+			{ new: true }
+		);
+
+		if (!user) {
+			return new Response(
+				JSON.stringify({ success: false, message: "User not found" }),
+				{
+					status: 404,
+				}
+			);
+		}
+
+		// Update Clerk
+		await clerk.users.updateUser(userId, { publicMetadata: { publicRole } });
+
+		return new Response(JSON.stringify({ success: true, user }), {
 			status: 200,
 		});
 	} catch (err) {
@@ -17,24 +49,12 @@ export async function GET() {
 	}
 }
 
-export async function PATCH(req) {
+// If you also need GET (list users)
+export async function GET(req) {
 	try {
 		await connectDB();
-		const { userId, publicRole } = await req.json();
-
-		// Update MongoDB
-		const user = await User.findByIdAndUpdate(
-			userId,
-			{ publicRole },
-			{ new: true }
-		);
-
-		// Update Clerk public metadata
-		await clerkClient.users.updateUser(userId, {
-			publicMetadata: { publicRole },
-		});
-
-		return new Response(JSON.stringify({ success: true, user }), {
+		const users = await User.find({});
+		return new Response(JSON.stringify({ success: true, users }), {
 			status: 200,
 		});
 	} catch (err) {
