@@ -8,10 +8,11 @@ import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const Product = () => {
 	const { id } = useParams();
-	const { products, router, addToCart } = useAppContext();
+	const { products, router, addToCart, user } = useAppContext(); // added user
 
 	const [mainImage, setMainImage] = useState(null);
 	const [fade, setFade] = useState(true);
@@ -34,6 +35,23 @@ const Product = () => {
 	useEffect(() => {
 		fetchProductData();
 	}, [id, products.length]);
+
+	const handleAddToCart = () => {
+		if (!user) {
+			toast.error("Please log in to add items to your cart!");
+			return;
+		}
+		addToCart(productData._id);
+	};
+
+	const handleBuyNow = () => {
+		if (!user) {
+			toast.error("Please log in to buy this product!");
+			return;
+		}
+		addToCart(productData._id);
+		router.push("/cart");
+	};
 
 	return productData ? (
 		<>
@@ -124,14 +142,12 @@ const Product = () => {
 											<td className="text-gray-800/50">{productData.brand}</td>
 										</tr>
 									)}
-
 									{productData.color && (
 										<tr>
 											<td className="text-gray-600 font-medium">Color</td>
 											<td className="text-gray-800/50">{productData.color}</td>
 										</tr>
 									)}
-
 									<tr>
 										<td className="text-gray-600 font-medium">Category</td>
 										<td className="text-gray-800/50">{productData.category}</td>
@@ -142,16 +158,13 @@ const Product = () => {
 
 						<div className="flex items-center mt-10 gap-4">
 							<button
-								onClick={() => addToCart(productData._id)}
+								onClick={handleAddToCart}
 								className="w-full py-3.5 bg-gray-100 text-gray-800/80 hover:bg-gray-200 transition"
 							>
 								Add to Cart
 							</button>
 							<button
-								onClick={() => {
-									addToCart(productData._id);
-									router.push("/cart");
-								}}
+								onClick={handleBuyNow}
 								className="w-full py-3.5 bg-orange-500 text-white hover:bg-orange-600 transition"
 							>
 								Buy now
