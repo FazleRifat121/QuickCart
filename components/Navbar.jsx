@@ -11,7 +11,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const Navbar = () => {
-	const { isSeller, user, wishlist, cartItems, userData } = useAppContext();
+	const { isSeller, user, wishlist, cartItems, orders } = useAppContext();
 	const router = useRouter();
 	const { openSignIn } = useClerk();
 
@@ -19,8 +19,13 @@ const Navbar = () => {
 	const cartCount = cartItems
 		? Object.values(cartItems).reduce((sum, q) => sum + q, 0)
 		: 0;
-	const orderCount =
-		userData && Array.isArray(userData.orders) ? userData.orders.length : 0;
+
+	// Use context orders for reactive count
+	const [orderCount, setOrderCount] = useState(orders ? orders.length : 0);
+
+	useEffect(() => {
+		setOrderCount(orders ? orders.length : 0);
+	}, [orders]);
 
 	const [mounted, setMounted] = useState(false);
 	const [showMobileMenu, setShowMobileMenu] = useState(false);
