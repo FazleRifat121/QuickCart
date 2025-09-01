@@ -14,6 +14,7 @@ const MyOrders = () => {
 
 	const handleCancelOrder = async (orderId) => {
 		if (!confirm("Are you sure you want to cancel this order?")) return;
+
 		try {
 			const token = await getToken();
 			const { data } = await axios.post(
@@ -21,9 +22,9 @@ const MyOrders = () => {
 				{ orderId },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
+
 			if (data.success) {
 				toast.success("Order canceled successfully");
-				// Update local orders state
 				setOrders((prev) =>
 					prev.map((o) =>
 						o._id === orderId ? { ...o, status: "Canceled" } : o
@@ -42,49 +43,71 @@ const MyOrders = () => {
 			<Navbar />
 			<div className="min-h-screen px-6 md:px-16 py-6">
 				<h2 className="text-lg font-medium mb-4">My Orders</h2>
+
 				{orders.length === 0 ? (
 					<p>No orders yet.</p>
 				) : (
-					orders.map((order) => (
-						<div
-							key={order._id}
-							className="flex flex-col md:flex-row gap-4 border p-4 mb-4"
-						>
-							<Image src={assets.box_icon} alt="box" width={50} height={50} />
-							<div className="flex-1">
-								<p>Items: {order.items.length}</p>
-								<p>
-									Amount: {currency}
-									{order.amount}
-								</p>
-								<p>Status: {order.status}</p>
+					orders.map((order) => {
+						const orderDate = order.date
+							? new Date(order.date).toLocaleDateString()
+							: new Date().toLocaleDateString();
 
-								{/* ✅ Show each item with link */}
-								<div className="mt-2">
-									{order.items.map((item, idx) => (
-										<p key={idx} className="text-sm">
-											<Link
-												href={`/product/${item.productId}`}
-												className="text-blue-600 hover:underline"
-											>
-												{item.name} x {item.quantity}
-											</Link>
+						return (
+							<div
+								key={order._id}
+								className="flex flex-col md:flex-row gap-4 border p-4 mb-4"
+							>
+								<Image src={assets.box_icon} alt="box" width={50} height={50} />
+								<div className="flex-1">
+									<p>Items: {order.items.length}</p>
+									<p>
+										Amount: {currency}
+										{order.amount}
+									</p>
+									<p>Status: {order.status}</p>
+
+									{/* Method and Transaction ID */}
+									<p>
+										Method:{" "}
+										{order.paymentMethod && order.paymentMethod.toUpperCase()}
+									</p>
+									{order.transactionId && (
+										<p className="break-all">
+											Transaction ID: {order.transactionId}
 										</p>
-									))}
-								</div>
-
-								{order.status !== "Canceled" &&
-									order.status !== "Delivered" && (
-										<button
-											onClick={() => handleCancelOrder(order._id)}
-											className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-										>
-											Cancel Order
-										</button>
 									)}
+
+									<p>Date: {orderDate}</p>
+
+									<div className="mt-2">
+										{order.items.map((item, idx) => (
+											<p key={idx} className="text-sm">
+												<Link
+													href={`/product/${
+														item.productId || item.product?._id
+													}`}
+													className="text-blue-600 hover:underline"
+												>
+													{item.name || item.product?.name || "Product"} x{" "}
+													{item.quantity}
+												</Link>
+											</p>
+										))}
+									</div>
+
+									{order.status !== "Canceled" &&
+										order.status !== "Delivered" && (
+											<button
+												onClick={() => handleCancelOrder(order._id)}
+												className="mt-2 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+											>
+												Cancel Order
+											</button>
+										)}
+								</div>
 							</div>
-						</div>
-					))
+						);
+					})
 				)}
 			</div>
 			<Footer />
