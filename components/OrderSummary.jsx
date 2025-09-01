@@ -324,7 +324,7 @@ const OrderSummary = () => {
 			</div>
 
 			{/* Place order */}
-			{!(paymentMethod === "online" && onlineOption === "stripe") && (
+			{paymentMethod !== "online" && (
 				<button
 					onClick={() => createOrder()}
 					className="w-full bg-orange-600 text-white py-3 mt-5 hover:bg-orange-700 rounded-md"
