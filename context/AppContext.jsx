@@ -59,53 +59,36 @@ export const AppContextProvider = ({ children }) => {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 			if (data.success) {
-				// Store full order objects including paymentMethod & transactionId
-				const fullOrders = data.orders.map((order) => ({
-					...order, // keep all existing fields
-					items: order.items.map((item) => ({
-						productId: item.product?._id || "",
-						name: item.product?.name || "Unknown Product",
-						quantity: item.quantity,
-					})),
-				}));
-				setOrders(fullOrders.reverse());
+				setOrders(data.orders.reverse()); // store in state for MyOrders
 			}
 		} catch (err) {
-			console.log(err.message);
+			console.log("Orders fetch error:", err.message);
 		}
 	};
 
 	// -------- CART --------
 	const addToCart = async (itemId) => {
+		if (!user) {
+			toast.error("Please log in to add items to your cart!");
+			return;
+		}
+
 		const updatedCart = { ...cartItems };
 		updatedCart[itemId] = updatedCart[itemId] ? updatedCart[itemId] + 1 : 1;
 		setCartItems(updatedCart);
 
-		if (user) {
-			try {
-				const token = await getToken();
-				await axios.post(
-					"/api/cart/update",
-					{ cartData: updatedCart },
-					{ headers: { Authorization: `Bearer ${token}` } }
-				);
-				toast.success("Item added to cart");
-			} catch (err) {
-				toast.error(err.message || "Failed to update cart");
-			}
+		try {
+			const token = await getToken();
+			await axios.post(
+				"/api/cart/update",
+				{ cartData: updatedCart },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			toast.success("Item added to cart");
+		} catch (err) {
+			toast.error(err.message || "Failed to update cart");
 		}
 	};
-
-	const getCartCount = () =>
-		Object.values(cartItems).reduce((sum, q) => sum + q, 0);
-
-	const getCartAmount = () =>
-		Math.floor(
-			Object.entries(cartItems).reduce((total, [id, qty]) => {
-				const p = products.find((prod) => prod._id === id);
-				return p ? total + p.offerPrice * qty : total;
-			}, 0) * 100
-		) / 100;
 
 	const updateCartQuantity = async (itemId, quantity) => {
 		const updatedCart = { ...cartItems };
@@ -128,19 +111,23 @@ export const AppContextProvider = ({ children }) => {
 		}
 	};
 
+	const getCartCount = () =>
+		Object.values(cartItems).reduce((sum, q) => sum + q, 0);
+
+	const getCartAmount = () =>
+		Math.floor(
+			Object.entries(cartItems).reduce((total, [id, qty]) => {
+				const p = products.find((prod) => prod._id === id);
+				return p ? total + p.offerPrice * qty : total;
+			}, 0) * 100
+		) / 100;
+
 	// -------- WISHLIST --------
 	const toggleWishlist = async (product) => {
 		if (!product || !product._id) return;
-
-		let updatedWishlist;
-		const exists = wishlist.includes(product._id);
-
-		if (exists) {
-			updatedWishlist = wishlist.filter((id) => id !== product._id);
-		} else {
-			updatedWishlist = [...wishlist, product._id];
-		}
-
+		const updatedWishlist = wishlist.includes(product._id)
+			? wishlist.filter((id) => id !== product._id)
+			: [...wishlist, product._id];
 		setWishlist(updatedWishlist);
 
 		if (user) {
@@ -190,29 +177,34 @@ export const AppContextProvider = ({ children }) => {
 	useEffect(() => {
 		if (user) {
 			fetchUserData();
-			fetchOrders(); // now full orders including paymentMethod & transactionId
+			fetchOrders(); // fetch orders for MyOrders page
 		}
 	}, [user]);
 
-	const value = {
-		user,
-		getToken,
-		currency,
-		router,
-		isSeller,
-		setIsSeller,
-		userData,
-		products,
-		cartItems,
-		wishlist,
-		orders,
-		updateCartQuantity,
-		setCartItems,
-		addToCart,
-		getCartCount,
-		getCartAmount,
-		toggleWishlist,
-	};
-
-	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+	return (
+		<AppContext.Provider
+			value={{
+				user,
+				getToken,
+				currency,
+				router,
+				isSeller,
+				setIsSeller,
+				userData,
+				products,
+				cartItems,
+				wishlist,
+				orders,
+				updateCartQuantity,
+				setCartItems,
+				addToCart,
+				getCartCount,
+				getCartAmount,
+				toggleWishlist,
+				setOrders, // allow updating orders after cancel
+			}}
+		>
+			{children}
+		</AppContext.Provider>
+	);
 };

@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 const UsersAdmin = () => {
 	const [users, setUsers] = useState([]);
 
-	// Fetch all users from your API
 	const fetchUsers = async () => {
 		try {
 			const res = await axios.get("/api/admin/users");
@@ -16,26 +15,21 @@ const UsersAdmin = () => {
 		}
 	};
 
-	// Toggle role between Normal ↔ Seller
 	const toggleRole = async (userId, currentRole) => {
-		const newRole = currentRole === "Seller" ? "Normal" : "Seller";
+		const newRole = currentRole === "seller" ? "normal" : "seller"; // lowercase
 		try {
 			const res = await axios.patch("/api/admin/users", {
 				userId,
-				publicRole: newRole,
+				role: newRole, // send correct enum value
 			});
+
 			if (res.data.success) {
-				// Update UI
 				setUsers((prev) =>
 					prev.map((u) =>
-						u._id === userId
-							? { ...u, publicRole: res.data.user.publicRole }
-							: u
+						u._id === userId ? { ...u, role: res.data.user.role } : u
 					)
 				);
-				toast.success(
-					`${res.data.user.name} is now ${res.data.user.publicRole}`
-				);
+				toast.success(`${res.data.user.name} is now ${res.data.user.role}`);
 			}
 		} catch (err) {
 			toast.error(err.response?.data?.message || err.message);
@@ -66,15 +60,13 @@ const UsersAdmin = () => {
 							<tr key={user._id} className="text-center">
 								<td className="p-2 border">{user.name}</td>
 								<td className="p-2 border">{user.email}</td>
-								<td className="p-2 border">{user.publicRole || "Normal"}</td>
+								<td className="p-2 border">{user.role}</td>
 								<td className="p-2 border">
 									<button
-										onClick={() => toggleRole(user._id, user.publicRole)}
+										onClick={() => toggleRole(user._id, user.role)}
 										className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
 									>
-										{user.publicRole === "Seller"
-											? "Revoke Seller"
-											: "Make Seller"}
+										{user.role === "seller" ? "Revoke Seller" : "Make Seller"}
 									</button>
 								</td>
 							</tr>

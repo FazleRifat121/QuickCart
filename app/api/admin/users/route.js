@@ -1,4 +1,3 @@
-// app/api/admin/users/route.js
 import connectDB from "@/config/db";
 import User from "@/models/User";
 import { Clerk } from "@clerk/clerk-sdk-node";
@@ -8,35 +7,22 @@ const clerk = new Clerk({ apiKey: process.env.CLERK_API_KEY });
 export async function PATCH(req) {
 	try {
 		await connectDB();
-		const { userId, publicRole } = await req.json();
+		const { userId, role } = await req.json();
 
-		if (!userId || !publicRole) {
+		if (!userId || !role)
 			return new Response(
 				JSON.stringify({ success: false, message: "Missing fields" }),
-				{
-					status: 400,
-				}
+				{ status: 400 }
 			);
-		}
 
-		// Update MongoDB
-		const user = await User.findByIdAndUpdate(
-			userId,
-			{ publicRole },
-			{ new: true }
-		);
-
-		if (!user) {
+		const user = await User.findByIdAndUpdate(userId, { role }, { new: true });
+		if (!user)
 			return new Response(
 				JSON.stringify({ success: false, message: "User not found" }),
-				{
-					status: 404,
-				}
+				{ status: 404 }
 			);
-		}
 
-		// Update Clerk
-		await clerk.users.updateUser(userId, { publicMetadata: { publicRole } });
+		await clerk.users.updateUser(userId, { publicMetadata: { role } });
 
 		return new Response(JSON.stringify({ success: true, user }), {
 			status: 200,
@@ -49,7 +35,6 @@ export async function PATCH(req) {
 	}
 }
 
-// If you also need GET (list users)
 export async function GET(req) {
 	try {
 		await connectDB();

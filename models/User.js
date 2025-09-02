@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema({
 	email: { type: String, required: true, unique: true },
 	imageUrl: { type: String, required: true },
 	cartItems: { type: Object, default: {} },
-	publicRole: { type: String, enum: ["Normal", "Seller"], default: "Normal" },
+	role: { type: String, enum: ["normal", "seller"], default: "normal" }, // allow both roles
+	wishlist: { type: Array, default: [] },
 });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);
