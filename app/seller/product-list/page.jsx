@@ -70,9 +70,15 @@ const ProductList = () => {
 	}, [user]);
 
 	useEffect(() => {
-		const filtered = products.filter((p) =>
-			p.name.toLowerCase().includes(search.toLowerCase())
-		);
+		const filtered = products.filter((p) => {
+			const searchLower = search.toLowerCase();
+			return (
+				p.name.toLowerCase().includes(searchLower) ||
+				p.category.toLowerCase().includes(searchLower) ||
+				p.offerPrice?.toString().includes(searchLower) ||
+				p.color?.toLowerCase().includes(searchLower)
+			);
+		});
 		setFilteredProducts(filtered);
 	}, [search, products]);
 
