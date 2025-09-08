@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAppContext } from "@/context/AppContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,8 +10,36 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const MyOrders = () => {
-	const { orders, currency, getToken, setOrders } = useAppContext();
+	const { currency, getToken } = useAppContext();
+	const [orders, setOrders] = useState([]);
+	const [loading, setLoading] = useState(true);
 
+	// Fetch orders from API
+	const fetchOrders = async () => {
+		try {
+			setLoading(true);
+			const token = await getToken();
+			const { data } = await axios.get("/api/order/my-orders", {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+
+			if (data.success) {
+				setOrders(data.orders);
+			} else {
+				toast.error(data.message || "Failed to fetch orders");
+			}
+		} catch (err) {
+			toast.error(err.message || "Something went wrong");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchOrders();
+	}, []);
+
+	// Cancel order
 	const handleCancelOrder = async (orderId) => {
 		if (!confirm("Are you sure you want to cancel this order?")) return;
 
@@ -25,8 +53,9 @@ const MyOrders = () => {
 
 			if (data.success) {
 				toast.success("Order canceled successfully");
-				setOrders((prev) =>
-					prev.map((o) =>
+				// Update state immediately without refresh
+				setOrders((prevOrders) =>
+					prevOrders.map((o) =>
 						o._id === orderId ? { ...o, status: "Canceled" } : o
 					)
 				);
@@ -44,7 +73,9 @@ const MyOrders = () => {
 			<div className="min-h-screen px-6 md:px-16 py-6">
 				<h2 className="text-lg font-medium mb-4">My Orders</h2>
 
-				{orders.length === 0 ? (
+				{loading ? (
+					<p>Loading orders...</p>
+				) : orders.length === 0 ? (
 					<p>No orders yet.</p>
 				) : (
 					orders.map((order) => {
@@ -55,7 +86,9 @@ const MyOrders = () => {
 						return (
 							<div
 								key={order._id}
-								className="flex flex-col md:flex-row gap-4 border p-4 mb-4"
+								className={`flex flex-col md:flex-row gap-4 border p-4 mb-4
+                  ${order.status === "Canceled" ? "bg-red-50" : ""}
+                  ${order.status === "Delivered" ? "bg-green-100" : ""}`}
 							>
 								<Image src={assets.box_icon} alt="box" width={50} height={50} />
 								<div className="flex-1">
@@ -66,7 +99,6 @@ const MyOrders = () => {
 									</p>
 									<p>Status: {order.status}</p>
 
-									{/* Method and Transaction ID */}
 									<p>
 										Method:{" "}
 										{order.paymentMethod && order.paymentMethod.toUpperCase()}

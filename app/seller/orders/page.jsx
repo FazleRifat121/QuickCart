@@ -32,11 +32,34 @@ const SellerOrders = () => {
 		}
 	};
 
+	// Update status (Delivered / Pending)
+	const handleStatusUpdate = async (orderId, newStatus) => {
+		try {
+			const token = await getToken();
+			const { data } = await axios.put(
+				"/api/order/update-status",
+				{ orderId, status: newStatus },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+
+			if (data.success) {
+				toast.success(`Order marked as ${newStatus}`);
+				setOrders((prev) =>
+					prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
+				);
+			} else {
+				toast.error(data.message);
+			}
+		} catch (err) {
+			toast.error(err.message);
+		}
+	};
+
 	useEffect(() => {
 		if (isSeller) fetchSellerOrders();
 	}, [isSeller]);
 
-	// Filter orders by product name, buyer email, address, status, transactionId, or date
+	// Filter orders by product name, buyer email, address, status, etc.
 	const filteredOrders = orders.filter((order) => {
 		const search = searchTerm.toLowerCase();
 		const productMatch = order.items.some((item) =>
@@ -142,6 +165,23 @@ const SellerOrders = () => {
 									<span>Date: {new Date(order.date).toLocaleDateString()}</span>
 									<span>Status: {order.status}</span>
 								</p>
+
+								{/* Status update buttons */}
+								{order.status !== "Delivered" && order.status !== "Canceled" ? (
+									<button
+										onClick={() => handleStatusUpdate(order._id, "Delivered")}
+										className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+									>
+										Mark as Delivered
+									</button>
+								) : order.status === "Delivered" ? (
+									<button
+										onClick={() => handleStatusUpdate(order._id, "Pending")}
+										className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+									>
+										Undo Delivery
+									</button>
+								) : null}
 							</div>
 						</div>
 					))
