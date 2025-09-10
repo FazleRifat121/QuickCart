@@ -15,12 +15,25 @@ export async function GET(request) {
 				{ status: 401 }
 			);
 
-		const orders = await Order.find({ userId })
-			.populate("items.product") // populate product details
-			.sort({ date: -1 });
+		let orders;
+		try {
+			// Fetch orders safely
+			orders = await Order.find({ userId })
+				.populate({
+					path: "items.product",
+					// Just in case a product reference is missing, don't crash
+					match: { _id: { $exists: true } },
+				})
+				.sort({ date: -1 });
+		} catch (populateErr) {
+			console.error("Populate failed for orders:", populateErr);
+			// fallback: return empty array if populate fails
+			orders = [];
+		}
 
 		return NextResponse.json({ success: true, orders }, { status: 200 });
 	} catch (err) {
+		console.error("Order fetch error for user:", err);
 		return NextResponse.json(
 			{ success: false, message: err.message },
 			{ status: 500 }
