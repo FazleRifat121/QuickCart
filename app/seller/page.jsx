@@ -8,14 +8,15 @@ import axios from "axios";
 
 const AddProduct = () => {
 	const { getToken } = useAppContext();
-	const [files, setFiles] = useState([]);
+	const [files, setFiles] = useState([]); // Images
+	const [videos, setVideos] = useState([]); // ✅ Videos
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState("Three Piece");
 	const [price, setPrice] = useState("");
 	const [offerPrice, setOfferPrice] = useState("");
 	const [brand, setBrand] = useState("");
-	const [color, setColor] = useState(""); // ✅ New state for color
+	const [color, setColor] = useState("");
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -26,9 +27,16 @@ const AddProduct = () => {
 		formData.append("price", price);
 		formData.append("offerPrice", offerPrice);
 		formData.append("brand", brand);
-		formData.append("color", color); // ✅ Append color
+		formData.append("color", color);
+
+		// Images
 		for (let i = 0; i < files.length; i++) {
 			formData.append("image", files[i]);
+		}
+
+		// ✅ Videos
+		for (let i = 0; i < videos.length; i++) {
+			formData.append("video", videos[i]);
 		}
 
 		try {
@@ -41,13 +49,14 @@ const AddProduct = () => {
 			if (data.success) {
 				toast.success(data.message);
 				setFiles([]);
+				setVideos([]); // ✅ Reset videos
 				setName("");
 				setDescription("");
 				setCategory("Three Piece");
 				setPrice("");
 				setOfferPrice("");
 				setBrand("");
-				setColor(""); // ✅ Reset color
+				setColor("");
 			} else {
 				toast.error(data.message);
 			}
@@ -61,7 +70,7 @@ const AddProduct = () => {
 			<form onSubmit={handleSubmit} className="md:p-10 p-4 space-y-5 max-w-lg">
 				{/* Product Images */}
 				<div>
-					<p className="text-base font-medium">Product Image</p>
+					<p className="text-base font-medium">Product Images</p>
 					<div className="flex flex-wrap items-center gap-3 mt-2">
 						{[...Array(4)].map((_, index) => (
 							<label key={index} htmlFor={`image${index}`}>
@@ -72,11 +81,11 @@ const AddProduct = () => {
 										setFiles(updatedFiles);
 									}}
 									type="file"
+									accept="image/*"
 									id={`image${index}`}
 									hidden
 								/>
 								<Image
-									key={index}
 									className="max-w-24 cursor-pointer"
 									src={
 										files[index]
@@ -89,6 +98,39 @@ const AddProduct = () => {
 								/>
 							</label>
 						))}
+					</div>
+				</div>
+
+				{/* ✅ Product Video */}
+				<div>
+					<p className="text-base font-medium">Product Video</p>
+					<div className="flex items-center gap-3 mt-2">
+						<label htmlFor="video">
+							<input
+								onChange={(e) => {
+									if (e.target.files[0]) setVideos([e.target.files[0]]);
+								}}
+								type="file"
+								accept="video/*"
+								id="video"
+								hidden
+							/>
+							{videos[0] ? (
+								<video
+									className="w-24 h-24 object-cover rounded cursor-pointer"
+									src={URL.createObjectURL(videos[0])}
+									controls
+								/>
+							) : (
+								<Image
+									className="max-w-24 cursor-pointer"
+									src={assets.upload_area}
+									alt=""
+									width={100}
+									height={100}
+								/>
+							)}
+						</label>
 					</div>
 				</div>
 
@@ -144,9 +186,6 @@ const AddProduct = () => {
 							<option value="Salwar Kameez">Salwar Kameez</option>
 							<option value="Kurti">Kurti</option>
 							<option value="Silk">Silk</option>
-							<option value="Laptop">Laptop</option>
-							<option value="Camera">Camera</option>
-							<option value="Accessories">Accessories</option>
 						</select>
 					</div>
 

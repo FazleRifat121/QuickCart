@@ -9,14 +9,19 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { X, Volume2, VolumeX } from "lucide-react";
 
 const Product = () => {
 	const { id } = useParams();
-	const { products, router, addToCart, user } = useAppContext(); // added user
+	const { products, router, addToCart, user } = useAppContext();
 
 	const [mainImage, setMainImage] = useState(null);
 	const [fade, setFade] = useState(true);
 	const [productData, setProductData] = useState(null);
+
+	// 🎥 floating ad states
+	const [showVideoAd, setShowVideoAd] = useState(true);
+	const [mutedAd, setMutedAd] = useState(true);
 
 	const fetchProductData = async () => {
 		const product = products.find((product) => product._id === id);
@@ -24,7 +29,6 @@ const Product = () => {
 	};
 
 	const handleThumbnailClick = (image) => {
-		// Fade out, change image, then fade in
 		setFade(false);
 		setTimeout(() => {
 			setMainImage(image);
@@ -125,7 +129,9 @@ const Product = () => {
 							</div>
 							<p>(4.5)</p>
 						</div>
-						<p className="text-gray-600 mt-3">{productData.description}</p>
+						<p className="text-gray-600 mt-3 whitespace-pre-wrap">
+							{productData.description}
+						</p>
 						<p className="text-3xl font-medium mt-6">
 							${productData.offerPrice}
 							<span className="text-base font-normal text-gray-800/60 line-through ml-2">
@@ -173,6 +179,7 @@ const Product = () => {
 						</div>
 					</div>
 				</div>
+
 				<div className="flex flex-col items-center">
 					<div className="flex flex-col items-center mb-4 mt-16">
 						<p className="text-3xl font-medium">
@@ -195,6 +202,33 @@ const Product = () => {
 				</div>
 			</div>
 			<Footer />
+
+			{/* 🎥 Floating Video Ad */}
+			{showVideoAd && productData.video && (
+				<div className="fixed bottom-5 right-5 lg:right-32 w-36 h-64 bg-black rounded-xl overflow-hidden shadow-lg z-50">
+					<video
+						src={productData.video} // ✅ only use product video
+						autoPlay
+						loop
+						muted={mutedAd}
+						className="w-full h-full object-cover"
+					/>
+					<div className="absolute top-1 right-1 flex gap-2">
+						<button
+							onClick={() => setMutedAd(!mutedAd)}
+							className="bg-black/50 p-1 rounded text-white"
+						>
+							{mutedAd ? <VolumeX size={18} /> : <Volume2 size={18} />}
+						</button>
+						<button
+							onClick={() => setShowVideoAd(false)}
+							className="bg-black/50 p-1 rounded text-white"
+						>
+							<X size={18} />
+						</button>
+					</div>
+				</div>
+			)}
 		</>
 	) : (
 		<Loading />

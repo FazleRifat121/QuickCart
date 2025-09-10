@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema({
 	price: { type: Number },
 	offerPrice: { type: Number, required: true },
 	image: { type: Array, required: true },
+	video: { type: String }, // ✅ new optional video field
 	brand: { type: String }, // optional
 	color: { type: String }, // optional
 	date: { type: Number, required: true },

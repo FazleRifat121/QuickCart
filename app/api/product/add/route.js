@@ -30,8 +30,9 @@ export async function POST(request) {
 		const price = formData.get("price");
 		const offerPrice = formData.get("offerPrice");
 		const brand = formData.get("brand");
-		const color = formData.get("color"); // ✅ New color field
+		const color = formData.get("color");
 		const files = formData.getAll("image");
+		const videoFile = formData.get("video"); // ✅ new video file
 
 		if (!files || files.length === 0) {
 			return NextResponse.json(
@@ -40,13 +41,14 @@ export async function POST(request) {
 			);
 		}
 
-		const result = await Promise.all(
+		// ✅ Upload images
+		const imageResults = await Promise.all(
 			files.map(async (file) => {
 				const arrayBuffer = await file.arrayBuffer();
 				const buffer = Buffer.from(arrayBuffer);
 				return new Promise((resolve, reject) => {
 					const stream = cloudinary.uploader.upload_stream(
-						{ resource_type: "auto" },
+						{ resource_type: "image" },
 						(error, result) => {
 							if (error) reject(error);
 							else resolve(result);
@@ -57,7 +59,24 @@ export async function POST(request) {
 			})
 		);
 
-		const image = result.map((res) => res.secure_url);
+		const image = imageResults.map((res) => res.secure_url);
+
+		// ✅ Upload video (same logic as images)
+		let video = null;
+		if (videoFile && typeof videoFile !== "string") {
+			const arrayBuffer = await videoFile.arrayBuffer();
+			const buffer = Buffer.from(arrayBuffer);
+			video = await new Promise((resolve, reject) => {
+				const stream = cloudinary.uploader.upload_stream(
+					{ resource_type: "video" },
+					(error, result) => {
+						if (error) reject(error);
+						else resolve(result.secure_url);
+					}
+				);
+				stream.end(buffer);
+			});
+		}
 
 		await connectDB();
 
@@ -69,8 +88,9 @@ export async function POST(request) {
 			price: Number(price),
 			offerPrice: Number(offerPrice),
 			brand,
-			color, // ✅ Save color in DB
+			color,
 			image,
+			video, // ✅ stored same as image
 			date: Date.now(),
 		});
 
