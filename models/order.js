@@ -26,8 +26,10 @@ const orderSchema = new mongoose.Schema({
 	cancelAt: { type: Date, default: null },
 });
 
+// Auto-delete canceled orders
 orderSchema.index({ cancelAt: 1 }, { expireAfterSeconds: 0 });
 
+// Prevent OverwriteModelError in Next.js hot reload
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 
 export default Order;

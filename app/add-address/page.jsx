@@ -16,7 +16,6 @@ const AddAddress = () => {
 	const [address, setAddress] = useState({
 		fullName: "",
 		phoneNumber: "",
-		pincode: "",
 		area: "",
 		city: "",
 		state: "",
@@ -71,15 +70,7 @@ const AddAddress = () => {
 							}
 							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
 						/>
-						<input
-							type="text"
-							placeholder="Pin code"
-							value={address.pincode}
-							onChange={(e) =>
-								setAddress({ ...address, pincode: e.target.value })
-							}
-							className="px-2 py-2.5 border border-gray-500/30 rounded w-full text-gray-500 focus:border-orange-500"
-						/>
+
 						<textarea
 							placeholder="Address (Area and Street)"
 							value={address.area}
