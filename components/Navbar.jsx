@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { assets, BagIcon, CartIcon } from "@/assets/assets";
 import { MdDashboard } from "react-icons/md";
 import { useAppContext } from "@/context/AppContext";
@@ -21,18 +21,45 @@ const Navbar = () => {
 		: 0;
 
 	const [orderCount, setOrderCount] = useState(orders ? orders.length : 0);
+	const [mounted, setMounted] = useState(false);
+	const [showMobileMenu, setShowMobileMenu] = useState(false);
+	const [showMobileSearch, setShowMobileSearch] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState([]);
+
+	const mobileSearchRef = useRef(null);
+
+	// mark as mounted
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// update order count if orders change
 	useEffect(() => {
 		setOrderCount(orders ? orders.length : 0);
 	}, [orders]);
 
-	const [mounted, setMounted] = useState(false);
-	const [showMobileMenu, setShowMobileMenu] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [searchResults, setSearchResults] = useState([]);
+	// close search if clicking outside
+	useEffect(() => {
+		const handleClickOutside = (e) => {
+			if (
+				mobileSearchRef.current &&
+				!mobileSearchRef.current.contains(e.target)
+			) {
+				setShowMobileSearch(false);
+				setSearchQuery("");
+				setSearchResults([]);
+			}
+		};
+		if (showMobileSearch) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showMobileSearch]);
 
-	useEffect(() => setMounted(true), []);
-	if (!mounted) return null;
-
+	// search as you type
 	const handleSearchChange = async (e) => {
 		const query = e.target.value;
 		setSearchQuery(query);
@@ -50,11 +77,18 @@ const Navbar = () => {
 
 	const handleSearchSubmit = (e) => {
 		e.preventDefault();
+		if (!searchQuery) return;
 		router.push(`/all-products?search=${encodeURIComponent(searchQuery)}`);
 		setSearchQuery("");
 		setSearchResults([]);
 		setShowMobileMenu(false);
+		setShowMobileSearch(false);
 	};
+
+	// render placeholder while mounting
+	if (!mounted) {
+		return <nav className="h-16 border-b border-gray-300"></nav>;
+	}
 
 	return (
 		<nav className="flex flex-col md:flex-row items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300 text-gray-700 relative">
@@ -66,10 +100,11 @@ const Navbar = () => {
 					className="cursor-pointer w-28 md:w-32"
 					onClick={() => router.push("/")}
 				/>
+
 				{/* Mobile buttons */}
 				<div className="md:hidden flex items-center gap-3 relative">
 					{/* Search button */}
-					<button onClick={() => setShowMobileMenu(false)}>
+					<button onClick={() => setShowMobileSearch((prev) => !prev)}>
 						<Image src={assets.search_icon} alt="search" className="w-5 h-5" />
 					</button>
 
@@ -131,7 +166,7 @@ const Navbar = () => {
 						<span className="block h-0.5 w-full bg-gray-700"></span>
 					</button>
 
-					{/* Slide-out menu from right */}
+					{/* Slide-out menu */}
 					<div
 						className={`fixed top-0 right-0 w-64 h-full bg-white shadow-lg z-50 p-6 flex flex-col gap-6 transform transition-transform duration-300 ${
 							showMobileMenu ? "translate-x-0" : "translate-x-full"
@@ -172,10 +207,52 @@ const Navbar = () => {
 							Contact
 						</Link>
 					</div>
+
+					{/* Mobile search bar */}
+					{showMobileSearch && (
+						<div
+							ref={mobileSearchRef}
+							className="absolute top-12 -left-64 w-screen px-4 py-5 flex flex-col gap-2 z-50"
+						>
+							<input
+								type="text"
+								value={searchQuery}
+								onChange={handleSearchChange}
+								placeholder="Search products..."
+								className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+							/>
+
+							{searchResults.length > 0 && (
+								<div className="bg-white border rounded-md shadow max-h-64 overflow-y-auto">
+									{searchResults.map((product) => (
+										<div
+											key={product._id}
+											className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+											onClick={() => {
+												router.push(`/product/${product._id}`);
+												setSearchQuery("");
+												setSearchResults([]);
+												setShowMobileSearch(false);
+											}}
+										>
+											<Image
+												src={product.image[0]}
+												alt={product.name}
+												width={40}
+												height={40}
+												className="object-cover rounded"
+											/>
+											<span>{product.name}</span>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 
-			{/* Desktop links and search */}
+			{/* Desktop links + search */}
 			<div className="hidden md:flex flex-1 justify-center items-center gap-6">
 				<Link href="/" className="hover:text-gray-900 transition">
 					Home
