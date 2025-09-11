@@ -108,10 +108,16 @@ const Navbar = () => {
 						<Image src={assets.search_icon} alt="search" className="w-5 h-5" />
 					</button>
 
-					{/* User button */}
+					{/* User button (mobile only) */}
 					{user ? (
-						<UserButton>
-							<UserButton.MenuItems>
+						<UserButton
+							appearance={{
+								elements: {
+									userButtonPopoverCard: "ml-4 mt-2",
+								},
+							}}
+						>
+							<UserButton.MenuItems className="absolute top-full right-0 mt-2 w-64 flex flex-col gap-2 bg-white shadow-lg rounded z-50">
 								<UserButton.Action
 									label={`Cart (${cartCount})`}
 									labelIcon={<CartIcon className="w-5 h-5" />}
