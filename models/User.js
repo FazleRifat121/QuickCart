@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
 	cartItems: { type: Object, default: {} },
 	role: { type: String, enum: ["normal", "seller"], default: "normal" }, // allow both roles
 	wishlist: { type: Array, default: [] },
+	banned: { type: Boolean, default: false }, // NEW field
 });
 
 const User = mongoose.models.User || mongoose.model("User", userSchema);

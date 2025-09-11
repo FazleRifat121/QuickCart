@@ -56,13 +56,31 @@ const OrderSummary = () => {
 		}
 	};
 
-	const applyPromo = () => {
-		if (promoCode.toLowerCase() === "save10") {
-			setDiscount(Math.floor(getCartAmount() * 0.1));
-			toast.success("Promo applied!");
-		} else {
+	// ✅ Promo code logic
+	const applyPromo = async () => {
+		if (!promoCode) {
 			setDiscount(0);
-			toast.error("Invalid promo code");
+			toast.error("Enter promo code");
+			return;
+		}
+
+		try {
+			const { data } = await axios.post("/api/promo/apply", {
+				code: promoCode,
+			});
+			if (data.success) {
+				const discountAmount = Math.floor(
+					(subtotal * data.discountPercent) / 100
+				);
+				setDiscount(discountAmount);
+				toast.success(`Promo applied! You saved ${currency}${discountAmount}`);
+			} else {
+				setDiscount(0);
+				toast.error(data.message);
+			}
+		} catch (err) {
+			setDiscount(0);
+			toast.error(err.message);
 		}
 	};
 
@@ -84,7 +102,6 @@ const OrderSummary = () => {
 		}
 	};
 
-	// ✅ Fixed createOrder function
 	const createOrder = async (transactionId = null) => {
 		if (!selectedAddress) return toast.error("Select address");
 
@@ -96,12 +113,11 @@ const OrderSummary = () => {
 
 		try {
 			const token = await getToken();
-
 			const payload = {
 				address: selectedAddress._id,
 				items: cartItemsArray,
-				paymentMethod, // cod or online
-				paymentOption: paymentMethod === "cod" ? null : onlineOption, // bkash, nagad, stripe
+				paymentMethod,
+				paymentOption: paymentMethod === "cod" ? null : onlineOption,
 				transactionId: paymentMethod === "cod" ? null : transactionId || null,
 				discount,
 			};
@@ -222,27 +238,6 @@ const OrderSummary = () => {
 
 					{paymentMethod === "online" && (
 						<div className="mt-2 ml-4 flex flex-col gap-2 text-gray-700 text-sm">
-							{/* <label className="flex items-center gap-2 cursor-pointer">
-								<input
-									type="radio"
-									name="onlineOption"
-									value="bkash"
-									checked={onlineOption === "bkash"}
-									onChange={() => setOnlineOption("bkash")}
-								/>
-								<Image src={assets.bkash} alt="bKash" width={50} height={50} />
-								bKash
-							</label>
-							<label className="flex items-center gap-2">
-								<input
-									type="radio"
-									name="onlineOption"
-									value="nagad"
-									checked={onlineOption === "nagad"}
-									onChange={() => setOnlineOption("nagad")}
-								/>
-								Nagad
-							</label> */}
 							<label className="flex items-center gap-2">
 								<input
 									type="radio"
