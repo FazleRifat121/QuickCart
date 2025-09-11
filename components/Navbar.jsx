@@ -67,10 +67,13 @@ const Navbar = () => {
 					onClick={() => router.push("/")}
 				/>
 				{/* Mobile buttons */}
-				<div className="md:hidden flex items-center gap-3">
-					<button onClick={() => setShowMobileMenu(true)}>
-						<Image src={assets.search_icon} alt="menu" className="w-5 h-5" />
+				<div className="md:hidden flex items-center gap-3 relative">
+					{/* Search button */}
+					<button onClick={() => setShowMobileMenu(false)}>
+						<Image src={assets.search_icon} alt="search" className="w-5 h-5" />
 					</button>
+
+					{/* User button */}
 					{user ? (
 						<UserButton>
 							<UserButton.MenuItems>
@@ -117,6 +120,58 @@ const Navbar = () => {
 							Account
 						</button>
 					)}
+
+					{/* Hamburger button */}
+					<button
+						onClick={() => setShowMobileMenu((prev) => !prev)}
+						className="flex flex-col justify-between w-6 h-5 ml-2"
+					>
+						<span className="block h-0.5 w-full bg-gray-700"></span>
+						<span className="block h-0.5 w-full bg-gray-700"></span>
+						<span className="block h-0.5 w-full bg-gray-700"></span>
+					</button>
+
+					{/* Slide-out menu from right */}
+					<div
+						className={`fixed top-0 right-0 w-64 h-full bg-white shadow-lg z-50 p-6 flex flex-col gap-6 transform transition-transform duration-300 ${
+							showMobileMenu ? "translate-x-0" : "translate-x-full"
+						}`}
+					>
+						<button
+							className="self-end mb-4 text-xl font-bold"
+							onClick={() => setShowMobileMenu(false)}
+						>
+							✕
+						</button>
+						<Link
+							href="/"
+							onClick={() => setShowMobileMenu(false)}
+							className="hover:text-gray-900 text-lg"
+						>
+							Home
+						</Link>
+						<Link
+							href="/all-products"
+							onClick={() => setShowMobileMenu(false)}
+							className="hover:text-gray-900 text-lg"
+						>
+							Shop
+						</Link>
+						<Link
+							href="/about"
+							onClick={() => setShowMobileMenu(false)}
+							className="hover:text-gray-900 text-lg"
+						>
+							About Us
+						</Link>
+						<Link
+							href="/contact"
+							onClick={() => setShowMobileMenu(false)}
+							className="hover:text-gray-900 text-lg"
+						>
+							Contact
+						</Link>
+					</div>
 				</div>
 			</div>
 

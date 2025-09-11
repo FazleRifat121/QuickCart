@@ -1,21 +1,25 @@
-import connectDB from "@/config/db";
+import connectDB from "@/config/db"; // correct path
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
-export async function PATCH(request) {
-	await connectDB();
-
+export async function PATCH(req) {
 	try {
-		const { userId, ban } = await request.json();
+		await connectDB();
+		const { userId, ban } = await req.json();
 
-		if (!userId || typeof ban !== "boolean") {
+		if (!userId) {
 			return NextResponse.json(
-				{ success: false, message: "Invalid data" },
+				{ success: false, message: "Missing userId" },
 				{ status: 400 }
 			);
 		}
 
-		const user = await User.findById(userId);
+		const user = await User.findByIdAndUpdate(
+			userId,
+			{ banned: ban },
+			{ new: true }
+		);
+
 		if (!user) {
 			return NextResponse.json(
 				{ success: false, message: "User not found" },
@@ -23,14 +27,7 @@ export async function PATCH(request) {
 			);
 		}
 
-		user.banned = ban;
-		await user.save();
-
-		return NextResponse.json({
-			success: true,
-			user,
-			message: `User has been ${ban ? "banned" : "unbanned"}`,
-		});
+		return NextResponse.json({ success: true, user });
 	} catch (err) {
 		return NextResponse.json(
 			{ success: false, message: err.message },

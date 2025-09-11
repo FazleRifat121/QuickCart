@@ -2,6 +2,7 @@ import connectDB from "@/config/db";
 import Order from "@/models/order";
 import Product from "@/models/product";
 import User from "@/models/User";
+import Address from "@/models/address";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -11,6 +12,23 @@ export async function POST(request) {
 
 	try {
 		const { userId } = getAuth(request);
+
+		if (!userId) {
+			return NextResponse.json(
+				{ success: false, message: "Unauthorized" },
+				{ status: 401 }
+			);
+		}
+
+		// 🔴 Ban check
+		const user = await User.findById(userId);
+		if (user?.banned) {
+			return NextResponse.json(
+				{ success: false, message: "You are banned and cannot place orders" },
+				{ status: 403 }
+			);
+		}
+
 		const {
 			address,
 			items,
@@ -48,13 +66,12 @@ export async function POST(request) {
 			items,
 			amount: totalAmount,
 			date: Date.now(),
-			paymentMethod: normalizedMethod, // COD or Online Paid
+			paymentMethod: normalizedMethod,
 			transactionId: normalizedMethod === "COD" ? null : transactionId || null,
-			paymentOption: normalizedMethod === "COD" ? null : paymentOption || null, // bkash, nagad, stripe
+			paymentOption: normalizedMethod === "COD" ? null : paymentOption || null,
 		});
 
 		// Clear user cart
-		const user = await User.findById(userId);
 		user.cartItems = [];
 		await user.save();
 
@@ -73,7 +90,7 @@ export async function POST(request) {
 			// Build order items list with actual product names from DB
 			const itemsList = await Promise.all(
 				items.map(async (i) => {
-					const product = await Product.findById(i.product); // fetch actual product
+					const product = await Product.findById(i.product);
 					return `<li>${i.quantity} × ${product?.name || "Product"}</li>`;
 				})
 			);
@@ -101,7 +118,6 @@ export async function POST(request) {
 			await transporter.sendMail(mailOptions);
 		}
 
-		// Response
 		return NextResponse.json(
 			{ success: true, message: "Order Placed", order },
 			{ status: 200 }

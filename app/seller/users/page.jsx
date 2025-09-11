@@ -7,6 +7,7 @@ const UsersAdmin = () => {
 	const [users, setUsers] = useState([]);
 	const [search, setSearch] = useState("");
 
+	// Fetch users from backend
 	const fetchUsers = async () => {
 		try {
 			const res = await axios.get("/api/admin/users");
@@ -16,6 +17,7 @@ const UsersAdmin = () => {
 		}
 	};
 
+	// Toggle role between seller and normal
 	const toggleRole = async (userId, currentRole) => {
 		const newRole = currentRole === "seller" ? "normal" : "seller";
 		try {
@@ -36,6 +38,7 @@ const UsersAdmin = () => {
 		}
 	};
 
+	// Toggle banned status in DB (soft ban)
 	const toggleBan = async (userId, isBanned) => {
 		try {
 			const res = await axios.patch("/api/admin/users/ban", {
@@ -63,6 +66,7 @@ const UsersAdmin = () => {
 		fetchUsers();
 	}, []);
 
+	// Filter users based on search
 	const filteredUsers = users.filter(
 		(u) =>
 			u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -88,7 +92,7 @@ const UsersAdmin = () => {
 				<p className="text-center mt-10">No users found</p>
 			) : (
 				<div className="overflow-x-auto">
-					<table className="w-full border border-gray-300 min-w-[600px]">
+					<table className="w-full border border-gray-300 min-w-[500px]">
 						<thead className="hidden sm:table-header-group">
 							<tr className="bg-gray-100">
 								<th className="p-2 border">Name</th>
@@ -123,13 +127,13 @@ const UsersAdmin = () => {
 									<td className="p-2 sm:px-4 sm:py-2 flex flex-col sm:flex-row gap-2">
 										<button
 											onClick={() => toggleRole(user._id, user.role)}
-											className="px-3 py-1 w-full sm:w-auto bg-blue-600 text-white rounded hover:bg-blue-700"
+											className="px-2 py-1 w-full sm:w-auto text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
 										>
 											{user.role === "seller" ? "Revoke Seller" : "Make Seller"}
 										</button>
 										<button
 											onClick={() => toggleBan(user._id, user.banned)}
-											className="px-3 py-1 w-full sm:w-auto bg-red-600 text-white rounded hover:bg-red-700"
+											className="px-2 py-1 w-full sm:w-auto text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700"
 										>
 											{user.banned ? "Unban" : "Ban"}
 										</button>
