@@ -40,7 +40,7 @@ const HeaderSlider = ({ banners }) => {
 								: "/all-products"
 						}
 					>
-						<div className="relative w-[100vw] flex-shrink-0 h-[200px] sm:h-[300px] md:h-[400px] lg:h-[600px]">
+						<div className="relative w-[100vw] flex-shrink-0 h-[200px] sm:h-[300px] md:h-[400px] lg:h-[800px]">
 							{banner?.imgUrl ? (
 								<Image
 									src={banner.imgUrl}
