@@ -96,22 +96,54 @@ export async function POST(request) {
 			);
 
 			const mailOptions = {
-				from: "QuickCart",
+				from: "QuickCart <no-reply@quickcart.com>",
 				to: user.email,
-				subject: "Order Confirmation",
+				subject: "Your QuickCart Order Confirmation",
 				html: `
-					<h2>Thank you for your order!</h2>
-					<p>Your order has been placed successfully.</p>
-					<p><strong>Order ID:</strong> ${order._id}</p>
-					<p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
-					${
-						order.paymentMethod === "Online Paid" && order.transactionId
-							? `<p><strong>Transaction ID:</strong> ${order.transactionId}</p>`
-							: ""
-					}
-					<p><strong>Items:</strong></p>
-					<ul>${itemsList.join("")}</ul>
-					<p><strong>Total Amount:</strong> $${order.amount}</p>
+					<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+						
+						<h2 style="color: #ff6700; text-align: center;">Thank You for Your Order!</h2>
+						
+						<p>Hi ${user.firstName || "Customer"},</p>
+						<p>We’re excited to let you know that your order has been placed successfully. Here are the details of your order:</p>
+						
+						<p><strong>Order ID:</strong> ${order._id}</p>
+						<p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
+						${
+							order.paymentMethod === "Online Paid" && order.transactionId
+								? `<p><strong>Transaction ID:</strong> ${order.transactionId}</p>`
+								: ""
+						}
+			
+						<h3 style="margin-top: 20px; color: #555;">Items in Your Order:</h3>
+						<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+							<thead>
+								<tr>
+									<th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
+									<th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: center;">Quantity</th>
+								</tr>
+							</thead>
+							<tbody>
+								${itemsList
+									.map(
+										(item) => `
+										<tr>
+											<td style="border-bottom: 1px solid #eee; padding: 8px;">${item.productName}</td>
+											<td style="border-bottom: 1px solid #eee; padding: 8px; text-align: center;">${item.quantity}</td>
+										</tr>
+									`
+									)
+									.join("")}
+							</tbody>
+						</table>
+			
+						<p><strong>Total Amount:</strong> $${order.amount}</p>
+			
+						<p>We’ll notify you once your items are shipped. If you have any questions, feel free to reply to this email or contact our support team. We’re here to help!</p>
+			
+						<p style="text-align: center; margin-top: 30px; font-weight: bold; color: #ff6700;">Thank you for choosing QuickCart!</p>
+						<p style="text-align: center; color: #888;">The QuickCart Team</p>
+					</div>
 				`,
 			};
 
