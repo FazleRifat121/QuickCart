@@ -139,7 +139,7 @@ const Product = () => {
 							</span>
 						</p>
 						<hr className="bg-gray-600 my-6" />
-						<div className="overflow-x-auto">
+						<div className="overflow-x-hidden">
 							<table className="table-auto border-collapse w-full max-w-72">
 								<tbody>
 									{productData.brand && (
@@ -158,6 +158,14 @@ const Product = () => {
 										<td className="text-gray-600 font-medium">Category</td>
 										<td className="text-gray-800/50">{productData.category}</td>
 									</tr>
+									{productData.sizes && productData.sizes.length > 0 && (
+										<tr>
+											<td className="text-gray-600 font-medium">Sizes</td>
+											<td className="text-gray-800/50">
+												{productData.sizes.join(", ")}
+											</td>
+										</tr>
+									)}
 								</tbody>
 							</table>
 						</div>

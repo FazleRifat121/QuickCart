@@ -6,10 +6,12 @@ import toast from "react-hot-toast";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 
+const sizeOptions = ["S", "M", "L", "XL"];
+
 const AddProduct = () => {
 	const { getToken } = useAppContext();
-	const [files, setFiles] = useState([]); // Images
-	const [videos, setVideos] = useState([]); // ✅ Videos
+	const [files, setFiles] = useState([]);
+	const [videos, setVideos] = useState([]);
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState("Three Piece");
@@ -17,6 +19,12 @@ const AddProduct = () => {
 	const [offerPrice, setOfferPrice] = useState("");
 	const [brand, setBrand] = useState("");
 	const [color, setColor] = useState("");
+	const [sizes, setSizes] = useState([]);
+
+	const handleSizeChange = (size) => {
+		if (sizes.includes(size)) setSizes(sizes.filter((s) => s !== size));
+		else setSizes([...sizes, size]);
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -28,28 +36,23 @@ const AddProduct = () => {
 		formData.append("offerPrice", offerPrice);
 		formData.append("brand", brand);
 		formData.append("color", color);
+		formData.append("sizes", JSON.stringify(sizes)); // ✅ send sizes
 
 		// Images
-		for (let i = 0; i < files.length; i++) {
-			formData.append("image", files[i]);
-		}
-
-		// ✅ Videos
-		for (let i = 0; i < videos.length; i++) {
-			formData.append("video", videos[i]);
-		}
+		for (let i = 0; i < files.length; i++) formData.append("image", files[i]);
+		// Videos
+		for (let i = 0; i < videos.length; i++) formData.append("video", videos[i]);
 
 		try {
 			const token = await getToken();
 			const { data } = await axios.post("/api/product/add", formData, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+				headers: { Authorization: `Bearer ${token}` },
 			});
 			if (data.success) {
 				toast.success(data.message);
+				// Reset form
 				setFiles([]);
-				setVideos([]); // ✅ Reset videos
+				setVideos([]);
 				setName("");
 				setDescription("");
 				setCategory("Three Piece");
@@ -57,9 +60,8 @@ const AddProduct = () => {
 				setOfferPrice("");
 				setBrand("");
 				setColor("");
-			} else {
-				toast.error(data.message);
-			}
+				setSizes([]);
+			} else toast.error(data.message);
 		} catch (error) {
 			toast.error(error.message);
 		}
@@ -67,7 +69,7 @@ const AddProduct = () => {
 
 	return (
 		<div className="flex-1 min-h-screen flex flex-col justify-between">
-			<form onSubmit={handleSubmit} className="md:p-10 p-4 space-y-5 max-w-lg">
+			<form onSubmit={handleSubmit} className="md:p-10 p-4 space-y-5 max-w-lg ">
 				{/* Product Images */}
 				<div>
 					<p className="text-base font-medium">Product Images</p>
@@ -101,15 +103,15 @@ const AddProduct = () => {
 					</div>
 				</div>
 
-				{/* ✅ Product Video */}
+				{/* Product Video */}
 				<div>
 					<p className="text-base font-medium">Product Video</p>
 					<div className="flex items-center gap-3 mt-2">
 						<label htmlFor="video">
 							<input
-								onChange={(e) => {
-									if (e.target.files[0]) setVideos([e.target.files[0]]);
-								}}
+								onChange={(e) =>
+									e.target.files[0] && setVideos([e.target.files[0]])
+								}
 								type="file"
 								accept="video/*"
 								id="video"
@@ -136,34 +138,25 @@ const AddProduct = () => {
 
 				{/* Name & Description */}
 				<div className="flex flex-col gap-1 max-w-md">
-					<label className="text-base font-medium" htmlFor="product-name">
-						Product Name
-					</label>
+					<label className="text-base font-medium">Product Name</label>
 					<input
-						id="product-name"
 						type="text"
 						placeholder="Type here"
 						className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-						onChange={(e) => setName(e.target.value)}
 						value={name}
+						onChange={(e) => setName(e.target.value)}
 						required
 					/>
 				</div>
 
 				<div className="flex flex-col gap-1 max-w-md">
-					<label
-						className="text-base font-medium"
-						htmlFor="product-description"
-					>
-						Product Description
-					</label>
+					<label className="text-base font-medium">Product Description</label>
 					<textarea
-						id="product-description"
 						rows={4}
 						className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40 resize-none"
 						placeholder="Type here"
-						onChange={(e) => setDescription(e.target.value)}
 						value={description}
+						onChange={(e) => setDescription(e.target.value)}
 						required
 					/>
 				</div>
@@ -172,14 +165,11 @@ const AddProduct = () => {
 				<div className="flex items-center gap-5 flex-wrap">
 					{/* Category */}
 					<div className="flex flex-col gap-1 w-32">
-						<label className="text-base font-medium" htmlFor="category">
-							Category
-						</label>
+						<label className="text-base font-medium">Category</label>
 						<select
-							id="category"
 							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
+							value={category}
 							onChange={(e) => setCategory(e.target.value)}
-							defaultValue={category}
 						>
 							<option value="Three Piece">Three Piece</option>
 							<option value="Lawn">Lawn</option>
@@ -191,66 +181,68 @@ const AddProduct = () => {
 
 					{/* Price */}
 					<div className="flex flex-col gap-1 w-32">
-						<label className="text-base font-medium" htmlFor="product-price">
-							Product Price
-						</label>
+						<label className="text-base font-medium">Product Price</label>
 						<input
-							id="product-price"
 							type="number"
 							placeholder="0"
 							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-							onChange={(e) => setPrice(e.target.value)}
 							value={price}
+							onChange={(e) => setPrice(e.target.value)}
 						/>
 					</div>
 
 					{/* Offer Price */}
 					<div className="flex flex-col gap-1 w-32">
-						<label className="text-base font-medium" htmlFor="offer-price">
-							Offer Price
-						</label>
+						<label className="text-base font-medium">Offer Price</label>
 						<input
-							id="offer-price"
 							type="number"
 							placeholder="0"
 							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-							onChange={(e) => setOfferPrice(e.target.value)}
 							value={offerPrice}
+							onChange={(e) => setOfferPrice(e.target.value)}
 							required
 						/>
 					</div>
-					<p className="text-sm text-orange-600 mt-1">
-						⚠️ If there's no discount, just enter the offer price value.
-					</p>
 
 					{/* Brand */}
 					<div className="flex flex-col gap-1 w-32">
-						<label className="text-base font-medium" htmlFor="brand">
-							Brand
-						</label>
+						<label className="text-base font-medium">Brand</label>
 						<input
-							id="brand"
 							type="text"
 							placeholder="Type here"
 							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-							onChange={(e) => setBrand(e.target.value)}
 							value={brand}
+							onChange={(e) => setBrand(e.target.value)}
 						/>
 					</div>
 
 					{/* Color */}
 					<div className="flex flex-col gap-1 w-32">
-						<label className="text-base font-medium" htmlFor="color">
-							Color
-						</label>
+						<label className="text-base font-medium">Color</label>
 						<input
-							id="color"
 							type="text"
 							placeholder="Type here"
-							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40"
-							onChange={(e) => setColor(e.target.value)}
+							className="outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500/40  capitalize"
 							value={color}
+							onChange={(e) => setColor(e.target.value)}
 						/>
+					</div>
+				</div>
+
+				{/* ✅ Sizes */}
+				<div>
+					<p className="font-medium mb-1">Sizes</p>
+					<div className="flex gap-2 flex-wrap">
+						{sizeOptions.map((s) => (
+							<label key={s} className="flex items-center gap-1">
+								<input
+									type="checkbox"
+									checked={sizes.includes(s)}
+									onChange={() => handleSizeChange(s)}
+								/>
+								{s}
+							</label>
+						))}
 					</div>
 				</div>
 

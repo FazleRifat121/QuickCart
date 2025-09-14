@@ -7,10 +7,12 @@ const productSchema = new mongoose.Schema({
 	category: { type: String, required: true },
 	price: { type: Number },
 	offerPrice: { type: Number, required: true },
-	image: { type: Array, required: true },
-	video: { type: String }, // ✅ new optional video field
-	brand: { type: String }, // optional
-	color: { type: String }, // optional
+	image: { type: [String], required: true }, // ✅ array of strings
+	video: { type: String },
+	brand: { type: String },
+	color: { type: String },
+	sizes: { type: [String], default: [] }, // ✅ array of strings
+	orders: { type: Number, default: 0 },
 	date: { type: Number, required: true },
 });
 

@@ -31,8 +31,9 @@ export async function POST(request) {
 		const offerPrice = formData.get("offerPrice");
 		const brand = formData.get("brand");
 		const color = formData.get("color");
+		const sizesRaw = formData.get("sizes");
 		const files = formData.getAll("image");
-		const videoFile = formData.get("video"); // ✅ new video file
+		const videoFile = formData.get("video");
 
 		if (!files || files.length === 0) {
 			return NextResponse.json(
@@ -41,7 +42,18 @@ export async function POST(request) {
 			);
 		}
 
-		// ✅ Upload images
+		// Parse sizes safely
+		let sizes = [];
+		if (sizesRaw) {
+			try {
+				const parsed = JSON.parse(sizesRaw);
+				if (Array.isArray(parsed)) sizes = parsed;
+			} catch (err) {
+				sizes = [];
+			}
+		}
+
+		// Upload images
 		const imageResults = await Promise.all(
 			files.map(async (file) => {
 				const arrayBuffer = await file.arrayBuffer();
@@ -49,10 +61,7 @@ export async function POST(request) {
 				return new Promise((resolve, reject) => {
 					const stream = cloudinary.uploader.upload_stream(
 						{ resource_type: "image" },
-						(error, result) => {
-							if (error) reject(error);
-							else resolve(result);
-						}
+						(error, result) => (error ? reject(error) : resolve(result))
 					);
 					stream.end(buffer);
 				});
@@ -61,7 +70,7 @@ export async function POST(request) {
 
 		const image = imageResults.map((res) => res.secure_url);
 
-		// ✅ Upload video (same logic as images)
+		// Upload video
 		let video = null;
 		if (videoFile && typeof videoFile !== "string") {
 			const arrayBuffer = await videoFile.arrayBuffer();
@@ -69,10 +78,8 @@ export async function POST(request) {
 			video = await new Promise((resolve, reject) => {
 				const stream = cloudinary.uploader.upload_stream(
 					{ resource_type: "video" },
-					(error, result) => {
-						if (error) reject(error);
-						else resolve(result.secure_url);
-					}
+					(error, result) =>
+						error ? reject(error) : resolve(result.secure_url)
 				);
 				stream.end(buffer);
 			});
@@ -89,9 +96,11 @@ export async function POST(request) {
 			offerPrice: Number(offerPrice),
 			brand,
 			color,
+			sizes, // ✅ proper sizes array
 			image,
-			video, // ✅ stored same as image
-			date: Date.now(),
+			video,
+			orders: 0, // popularity
+			date: Date.now(), // ✅ new arrival sorting
 		});
 
 		return NextResponse.json(
@@ -99,6 +108,7 @@ export async function POST(request) {
 			{ status: 201 }
 		);
 	} catch (error) {
+		console.error("Error adding product:", error);
 		return NextResponse.json(
 			{ success: false, message: error.message },
 			{ status: 500 }
