@@ -89,9 +89,11 @@ export async function POST(request) {
 
 			// Build order items list with actual product names from DB
 			const itemsList = await Promise.all(
-				items.map(async (i) => {
-					const product = await Product.findById(i.product);
-					return `<li>${i.quantity} × ${product?.name || "Product"}</li>`;
+				order.items.map(async (i) => {
+					const product = i.product; // populated Product
+					return `<li style="margin-bottom: 5px;">${i.quantity} × ${
+						product?.name || "Product"
+					}</li>`;
 				})
 			);
 
@@ -116,26 +118,9 @@ export async function POST(request) {
 						}
 			
 						<h3 style="margin-top: 20px; color: #555;">Items in Your Order:</h3>
-						<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-							<thead>
-								<tr>
-									<th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
-									<th style="border-bottom: 1px solid #ddd; padding: 8px; text-align: center;">Quantity</th>
-								</tr>
-							</thead>
-							<tbody>
-								${itemsList
-									.map(
-										(item) => `
-										<tr>
-											<td style="border-bottom: 1px solid #eee; padding: 8px;">${item.productName}</td>
-											<td style="border-bottom: 1px solid #eee; padding: 8px; text-align: center;">${item.quantity}</td>
-										</tr>
-									`
-									)
-									.join("")}
-							</tbody>
-						</table>
+						<ul style="padding-left: 20px; margin-bottom: 20px;">
+							${itemsList.join("")}
+						</ul>
 			
 						<p><strong>Total Amount:</strong> $${order.amount}</p>
 			
