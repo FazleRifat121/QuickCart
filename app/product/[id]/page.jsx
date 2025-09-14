@@ -7,9 +7,9 @@ import ProductCard from "@/components/ProductCard";
 import { useAppContext } from "@/context/AppContext";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { X, Volume2, VolumeX } from "lucide-react";
+import { X, Volume2, VolumeX, Maximize2 } from "lucide-react";
 
 const Product = () => {
 	const { id } = useParams();
@@ -22,11 +22,12 @@ const Product = () => {
 	// 🎥 floating ad states
 	const [showVideoAd, setShowVideoAd] = useState(true);
 	const [mutedAd, setMutedAd] = useState(true);
+	const videoRef = useRef(null);
 
-	const fetchProductData = async () => {
-		const product = products.find((product) => product._id === id);
+	useEffect(() => {
+		const product = products.find((p) => p._id === id);
 		setProductData(product);
-	};
+	}, [id, products]);
 
 	const handleThumbnailClick = (image) => {
 		setFade(false);
@@ -36,57 +37,49 @@ const Product = () => {
 		}, 200);
 	};
 
-	useEffect(() => {
-		fetchProductData();
-	}, [id, products.length]);
-
 	const handleAddToCart = () => {
-		if (!user) {
-			toast.error("Please log in to add items to your cart!");
-			return;
-		}
+		if (!user) return toast.error("Please log in to add items to your cart!");
 		addToCart(productData._id);
 	};
 
 	const handleBuyNow = () => {
-		if (!user) {
-			toast.error("Please log in to buy this product!");
-			return;
-		}
+		if (!user) return toast.error("Please log in to buy this product!");
 		addToCart(productData._id);
 		router.push("/cart");
 	};
 
-	return productData ? (
+	if (!productData) return <Loading />;
+
+	return (
 		<>
 			<Navbar />
 			<div className="px-6 md:px-16 lg:px-32 pt-14 space-y-10">
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+					{/* Main Image and Thumbnails */}
 					<div className="px-5 lg:px-16 xl:px-20">
 						<div className="rounded-lg overflow-hidden bg-gray-500/10 mb-4">
 							<Image
 								key={mainImage || productData.image[0]}
 								src={mainImage || productData.image[0]}
-								alt="alt"
-								className={`w-full h-auto object-cover mix-blend-multiply transition-opacity duration-500 ease-in-out ${
+								alt={productData.name}
+								className={`w-full h-auto object-cover transition-opacity duration-500 ease-in-out ${
 									fade ? "opacity-100" : "opacity-0"
 								}`}
 								width={1280}
 								height={720}
 							/>
 						</div>
-
 						<div className="grid grid-cols-4 gap-4">
-							{productData.image.map((image, index) => (
+							{productData.image.map((image, idx) => (
 								<div
-									key={index}
+									key={idx}
 									onClick={() => handleThumbnailClick(image)}
 									className="cursor-pointer rounded-lg overflow-hidden bg-gray-500/10"
 								>
 									<Image
 										src={image}
-										alt="alt"
-										className="w-full h-auto object-cover mix-blend-multiply"
+										alt={productData.name}
+										className="w-full h-auto object-cover"
 										width={1280}
 										height={720}
 									/>
@@ -95,50 +88,21 @@ const Product = () => {
 						</div>
 					</div>
 
+					{/* Product Details */}
 					<div className="flex flex-col">
 						<h1 className="text-3xl font-medium text-gray-800/90 mb-4">
 							{productData.name}
 						</h1>
-						<div className="flex items-center gap-2">
-							<div className="flex items-center gap-0.5">
-								<Image
-									className="h-4 w-4"
-									src={assets.star_icon}
-									alt="star_icon"
-								/>
-								<Image
-									className="h-4 w-4"
-									src={assets.star_icon}
-									alt="star_icon"
-								/>
-								<Image
-									className="h-4 w-4"
-									src={assets.star_icon}
-									alt="star_icon"
-								/>
-								<Image
-									className="h-4 w-4"
-									src={assets.star_icon}
-									alt="star_icon"
-								/>
-								<Image
-									className="h-4 w-4"
-									src={assets.star_dull_icon}
-									alt="star_dull_icon"
-								/>
-							</div>
-							<p>(4.5)</p>
-						</div>
-						<p className="text-gray-600 mt-3 whitespace-pre-wrap">
-							{productData.description}
-						</p>
+
 						<p className="text-3xl font-medium mt-6">
 							${productData.offerPrice}
 							<span className="text-base font-normal text-gray-800/60 line-through ml-2">
 								${productData.price}
 							</span>
 						</p>
+
 						<hr className="bg-gray-600 my-6" />
+
 						<div className="overflow-x-hidden">
 							<table className="table-auto border-collapse w-full max-w-72">
 								<tbody>
@@ -158,7 +122,7 @@ const Product = () => {
 										<td className="text-gray-600 font-medium">Category</td>
 										<td className="text-gray-800/50">{productData.category}</td>
 									</tr>
-									{productData.sizes && productData.sizes.length > 0 && (
+									{productData.sizes?.length > 0 && (
 										<tr>
 											<td className="text-gray-600 font-medium">Sizes</td>
 											<td className="text-gray-800/50">
@@ -172,7 +136,7 @@ const Product = () => {
 
 						<div className="flex items-center mt-10 gap-4">
 							<button
-								onClick={() => addToCart(productData._id)}
+								onClick={handleAddToCart}
 								className="w-full py-3.5 bg-gray-100 text-gray-800/80 hover:bg-gray-200"
 							>
 								Add to Cart
@@ -188,11 +152,11 @@ const Product = () => {
 					</div>
 				</div>
 
+				{/* Featured Products */}
 				<div className="flex flex-col items-center">
 					<div className="flex flex-col items-center mb-4 mt-16">
 						<p className="text-3xl font-medium">
-							Featured{" "}
-							<span className="font-medium text-orange-600">Products</span>
+							Featured <span className="text-orange-600">Products</span>
 						</p>
 						<div className="w-28 h-0.5 bg-orange-600 mt-2"></div>
 					</div>
@@ -209,25 +173,46 @@ const Product = () => {
 					</button>
 				</div>
 			</div>
+
 			<Footer />
 
 			{/* 🎥 Floating Video Ad */}
 			{showVideoAd && productData.video && (
 				<div className="fixed bottom-5 right-5 lg:right-32 w-36 h-64 bg-black rounded-xl overflow-hidden shadow-lg z-50">
 					<video
-						src={productData.video} // ✅ only use product video
+						ref={videoRef}
+						src={productData.video}
 						autoPlay
 						loop
 						muted={mutedAd}
 						className="w-full h-full object-cover"
 					/>
 					<div className="absolute top-1 right-1 flex gap-2">
+						{/* Mute / Unmute */}
 						<button
 							onClick={() => setMutedAd(!mutedAd)}
 							className="bg-black/50 p-1 rounded text-white"
 						>
 							{mutedAd ? <VolumeX size={18} /> : <Volume2 size={18} />}
 						</button>
+
+						{/* Fullscreen */}
+						<button
+							onClick={() => {
+								if (videoRef.current) {
+									if (!document.fullscreenElement) {
+										videoRef.current.requestFullscreen();
+									} else {
+										document.exitFullscreen();
+									}
+								}
+							}}
+							className="bg-black/50 p-1 rounded text-white"
+						>
+							<Maximize2 size={18} />
+						</button>
+
+						{/* Close */}
 						<button
 							onClick={() => setShowVideoAd(false)}
 							className="bg-black/50 p-1 rounded text-white"
@@ -238,8 +223,6 @@ const Product = () => {
 				</div>
 			)}
 		</>
-	) : (
-		<Loading />
 	);
 };
 
