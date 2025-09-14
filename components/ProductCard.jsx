@@ -50,11 +50,11 @@ const ProductCard = ({ product }) => {
 			onMouseEnter={startImageCycle}
 			onMouseLeave={stopImageCycle}
 		>
-			<div className="relative w-full h-72 rounded-xl overflow-hidden shadow-lg bg-gray-100 transition-shadow duration-300 group-hover:shadow-2xl">
+			<div className="relative w-full h-72 rounded-xl overflow-hidden shadow-lg bg-gray-100 transition-shadow duration-300 group-hover:shadow-2xl ">
 				<Image
 					src={product.image[currentImageIndex]}
 					alt={product.name}
-					className={`object-cover w-full h-full transition-opacity duration-500 ${
+					className={`object-cover w-full h-full transition-opacity duration-500 z-0 ${
 						fade ? "opacity-100" : "opacity-0"
 					}`}
 					width={800}
