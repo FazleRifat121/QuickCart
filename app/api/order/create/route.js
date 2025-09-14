@@ -90,7 +90,7 @@ export async function POST(request) {
 			// Build order items list with actual product names from DB
 			const itemsList = await Promise.all(
 				order.items.map(async (i) => {
-					const product = i.product; // populated Product
+					const product = await Product.findById(i.product); // fetch actual product
 					return `<li style="margin-bottom: 5px;">${i.quantity} × ${
 						product?.name || "Product"
 					}</li>`;
