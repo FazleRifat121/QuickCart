@@ -4,9 +4,9 @@ import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import { assets } from "@/assets/assets";
 import Link from "next/link";
 import Footer from "@/components/Footer";
+import { assets } from "@/assets/assets";
 
 const SellerOrders = () => {
 	const { getToken, currency, isSeller } = useAppContext();
@@ -14,17 +14,15 @@ const SellerOrders = () => {
 	const [loading, setLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 
+	// Fetch orders for seller
 	const fetchSellerOrders = async () => {
 		try {
 			const token = await getToken();
 			const { data } = await axios.get("/api/order/seller-orders", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			if (data.success) {
-				setOrders(data.orders);
-			} else {
-				toast.error(data.message);
-			}
+			if (data.success) setOrders(data.orders);
+			else toast.error(data.message);
 		} catch (err) {
 			toast.error(err.message);
 		} finally {
@@ -32,6 +30,7 @@ const SellerOrders = () => {
 		}
 	};
 
+	// Update order status
 	const handleStatusUpdate = async (orderId, newStatus) => {
 		try {
 			const token = await getToken();
@@ -46,16 +45,15 @@ const SellerOrders = () => {
 				setOrders((prev) =>
 					prev.map((o) => (o._id === orderId ? { ...o, status: newStatus } : o))
 				);
-			} else {
-				toast.error(data.message);
-			}
+			} else toast.error(data.message);
 		} catch (err) {
 			toast.error(err.message);
 		}
 	};
 
+	// Cancel order (buyer or seller)
 	const cancelOrder = async (orderId) => {
-		const reason = prompt("Enter cancellation reason (e.g., Out of stock):");
+		const reason = prompt("Enter cancellation reason:");
 		if (!reason) return;
 
 		try {
@@ -65,6 +63,7 @@ const SellerOrders = () => {
 				{ orderId, reason },
 				{ headers: { Authorization: `Bearer ${token}` } }
 			);
+
 			if (data.success) {
 				toast.success("Order canceled successfully");
 				setOrders((prev) =>
@@ -82,6 +81,7 @@ const SellerOrders = () => {
 		if (isSeller) fetchSellerOrders();
 	}, [isSeller]);
 
+	// Filter orders by search term
 	const filteredOrders = orders.filter((order) => {
 		const search = searchTerm.toLowerCase();
 		const productMatch = order.items.some((item) =>
@@ -133,10 +133,11 @@ const SellerOrders = () => {
 					filteredOrders.map((order) => (
 						<div
 							key={order._id}
-							className={`flex flex-col md:flex-row gap-5 p-5 border-t border-gray-300 
+							className={`flex flex-col md:flex-row gap-5 p-5 border-t border-gray-300
                 ${order.status === "Canceled" ? "bg-red-50" : ""}
                 ${order.status === "Delivered" ? "bg-green-100" : ""}`}
 						>
+							{/* Products */}
 							<div className="flex-1 flex gap-5 max-w-80">
 								<Image src={assets.box_icon} alt="box" width={50} height={50} />
 								<p className="flex flex-col gap-2">
@@ -155,6 +156,7 @@ const SellerOrders = () => {
 								</p>
 							</div>
 
+							{/* Buyer Info */}
 							<div>
 								<p>
 									<span className="font-medium">{order.address.fullName}</span>
@@ -169,11 +171,13 @@ const SellerOrders = () => {
 								</p>
 							</div>
 
+							{/* Amount */}
 							<p className="font-medium my-auto">
 								{currency}
 								{order.amount}
 							</p>
 
+							{/* Actions */}
 							<div className="flex flex-col justify-between w-48">
 								<p className="flex flex-col">
 									<span>
@@ -188,7 +192,6 @@ const SellerOrders = () => {
 									<span>Status: {order.status}</span>
 								</p>
 
-								{/* Status update buttons */}
 								<div className="flex flex-wrap gap-2 mt-2">
 									{order.status !== "Delivered" &&
 										order.status !== "Canceled" && (
