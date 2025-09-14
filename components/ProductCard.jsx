@@ -73,19 +73,6 @@ const ProductCard = ({ product }) => {
 			<div className="w-full flex flex-col gap-1 mt-2">
 				<p className="md:text-lg font-semibold truncate">{product.name}</p>
 
-				{product.sizes && product.sizes.length > 0 && (
-					<div className="flex flex-wrap gap-1 mt-1">
-						{product.sizes.map((size) => (
-							<span
-								key={size}
-								className="text-[10px] px-2 py-0.5 bg-gray-200 text-gray-700 rounded"
-							>
-								{size}
-							</span>
-						))}
-					</div>
-				)}
-
 				<div className="flex items-center gap-2 mt-2">
 					<p className="text-base font-bold text-gray-800">
 						{currency}

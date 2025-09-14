@@ -32,7 +32,6 @@ const SellerOrders = () => {
 		}
 	};
 
-	// Update status (Delivered / Pending)
 	const handleStatusUpdate = async (orderId, newStatus) => {
 		try {
 			const token = await getToken();
@@ -55,11 +54,34 @@ const SellerOrders = () => {
 		}
 	};
 
+	const cancelOrder = async (orderId) => {
+		const reason = prompt("Enter cancellation reason (e.g., Out of stock):");
+		if (!reason) return;
+
+		try {
+			const token = await getToken();
+			const { data } = await axios.post(
+				"/api/order/cancel",
+				{ orderId, reason },
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			if (data.success) {
+				toast.success("Order canceled successfully");
+				setOrders((prev) =>
+					prev.map((o) =>
+						o._id === orderId ? { ...o, status: "Canceled" } : o
+					)
+				);
+			} else toast.error(data.message);
+		} catch (err) {
+			toast.error(err.message);
+		}
+	};
+
 	useEffect(() => {
 		if (isSeller) fetchSellerOrders();
 	}, [isSeller]);
 
-	// Filter orders by product name, buyer email, address, status, etc.
 	const filteredOrders = orders.filter((order) => {
 		const search = searchTerm.toLowerCase();
 		const productMatch = order.items.some((item) =>
@@ -167,21 +189,35 @@ const SellerOrders = () => {
 								</p>
 
 								{/* Status update buttons */}
-								{order.status !== "Delivered" && order.status !== "Canceled" ? (
-									<button
-										onClick={() => handleStatusUpdate(order._id, "Delivered")}
-										className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-									>
-										Mark as Delivered
-									</button>
-								) : order.status === "Delivered" ? (
-									<button
-										onClick={() => handleStatusUpdate(order._id, "Pending")}
-										className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-									>
-										Undo Delivery
-									</button>
-								) : null}
+								<div className="flex flex-wrap gap-2 mt-2">
+									{order.status !== "Delivered" &&
+										order.status !== "Canceled" && (
+											<>
+												<button
+													onClick={() =>
+														handleStatusUpdate(order._id, "Delivered")
+													}
+													className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+												>
+													Mark as Delivered
+												</button>
+												<button
+													onClick={() => cancelOrder(order._id)}
+													className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+												>
+													Cancel Order
+												</button>
+											</>
+										)}
+									{order.status === "Delivered" && (
+										<button
+											onClick={() => handleStatusUpdate(order._id, "Pending")}
+											className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+										>
+											Undo Delivery
+										</button>
+									)}
+								</div>
 							</div>
 						</div>
 					))
