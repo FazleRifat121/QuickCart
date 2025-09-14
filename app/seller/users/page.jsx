@@ -38,30 +38,6 @@ const UsersAdmin = () => {
 		}
 	};
 
-	// Toggle banned status in DB (soft ban)
-	const toggleBan = async (userId, isBanned) => {
-		try {
-			const res = await axios.patch("/api/admin/users/ban", {
-				userId,
-				ban: !isBanned,
-			});
-			if (res.data.success) {
-				setUsers((prev) =>
-					prev.map((u) =>
-						u._id === userId ? { ...u, banned: res.data.user.banned } : u
-					)
-				);
-				toast.success(
-					`${res.data.user.name} has been ${
-						res.data.user.banned ? "banned" : "unbanned"
-					}`
-				);
-			}
-		} catch (err) {
-			toast.error(err.response?.data?.message || err.message);
-		}
-	};
-
 	useEffect(() => {
 		fetchUsers();
 	}, []);
@@ -98,7 +74,6 @@ const UsersAdmin = () => {
 								<th className="p-2 border">Name</th>
 								<th className="p-2 border">Email</th>
 								<th className="p-2 border">Role</th>
-								<th className="p-2 border">Banned</th>
 								<th className="p-2 border">Actions</th>
 							</tr>
 						</thead>
@@ -120,22 +95,12 @@ const UsersAdmin = () => {
 										<span className="font-semibold sm:hidden">Role: </span>
 										{user.role}
 									</td>
-									<td className="p-2 sm:px-4 sm:py-2">
-										<span className="font-semibold sm:hidden">Banned: </span>
-										{user.banned ? "Yes" : "No"}
-									</td>
 									<td className="p-2 sm:px-4 sm:py-2 flex flex-col sm:flex-row gap-2">
 										<button
 											onClick={() => toggleRole(user._id, user.role)}
 											className="px-2 py-1 w-full sm:w-auto text-xs sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
 										>
 											{user.role === "seller" ? "Revoke Seller" : "Make Seller"}
-										</button>
-										<button
-											onClick={() => toggleBan(user._id, user.banned)}
-											className="px-2 py-1 w-full sm:w-auto text-xs sm:text-sm bg-red-600 text-white rounded hover:bg-red-700"
-										>
-											{user.banned ? "Unban" : "Ban"}
 										</button>
 									</td>
 								</tr>

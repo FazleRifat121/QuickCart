@@ -1,105 +1,75 @@
-import React, { useState, useEffect } from "react";
-import { assets } from "@/assets/assets";
+"use client";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
-import { useAppContext } from "@/context/AppContext";
 
-const HeaderSlider = () => {
-	const { router } = useAppContext();
-	const sliderData = [
-		{
-			id: 1,
-			title: "Feel the Comfort – Your Ideal Salwar Kameez Awaits!",
-			offer: "Limited Time Offer 30% Off",
-			buttonText1: "Buy now",
-			buttonText2: "Find more",
-			imgSrc: assets.slider2,
-		},
-		{
-			id: 2,
-			title: "Step Into Style – Discover Your Perfect Three Piece!",
-			offer: "Hurry up only few lefts!",
-			buttonText1: "Shop Now",
-			buttonText2: "Explore Deals",
-			imgSrc: assets.slider1,
-		},
-		{
-			id: 3,
-			title: "Celebrate Every Occasion – Your Dream Outfit is Here!",
-			offer: "Exclusive Deal 40% Off",
-			buttonText1: "Order Now",
-			buttonText2: "Learn More",
-			imgSrc: assets.slider3,
-		},
-	];
-
+const HeaderSlider = ({ banners }) => {
 	const [currentSlide, setCurrentSlide] = useState(0);
 
 	useEffect(() => {
-		const interval = setInterval(() => {
-			setCurrentSlide((prev) => (prev + 1) % sliderData.length);
-		}, 3000);
-		return () => clearInterval(interval);
-	}, [sliderData.length]);
+		if (!banners || banners.length === 0) return;
 
-	const handleSlideChange = (index) => {
-		setCurrentSlide(index);
-	};
+		const interval = setInterval(() => {
+			setCurrentSlide((prev) => (prev + 1) % banners.length);
+		}, 3000);
+
+		return () => clearInterval(interval);
+	}, [banners]);
+
+	if (!banners || banners.length === 0) {
+		return (
+			<div className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[600px] bg-gray-200 flex items-center justify-center rounded-lg">
+				No banners
+			</div>
+		);
+	}
 
 	return (
-		<div className="overflow-hidden relative w-full">
+		<div className="relative w-full  overflow-hidden ">
+			{/* Slider Track */}
 			<div
 				className="flex transition-transform duration-700 ease-in-out"
-				style={{
-					transform: `translateX(-${currentSlide * 100}%)`,
-				}}
+				style={{ transform: `translateX(-${currentSlide * 100}vw)` }}
 			>
-				{sliderData.map((slide, index) => (
-					<div
-						key={slide.id}
-						className="flex flex-col-reverse md:flex-row items-center justify-between bg-[#E6E9F2] py-8 md:px-14 px-5 mt-6 rounded-xl min-w-full"
+				{banners.map((banner, idx) => (
+					<Link
+						key={idx}
+						href={
+							banner?.link && banner?.link.trim() !== ""
+								? banner.link
+								: "/all-products"
+						}
 					>
-						<div className="md:pl-8 mt-10 md:mt-0">
-							<p className="md:text-base text-orange-600 pb-1">{slide.offer}</p>
-							<h1 className="max-w-lg md:text-[40px] md:leading-[48px] text-2xl font-semibold">
-								{slide.title}
-							</h1>
-							<div className="flex items-center mt-4 md:mt-6 ">
-								<button
-									className="md:px-10 px-7 md:py-2.5 py-2 bg-orange-600 rounded-full text-white font-medium"
-									onClick={() => router.push("/all-products")}
-								>
-									{slide.buttonText1}
-								</button>
-								<button className="group flex items-center gap-2 px-6 py-2.5 font-medium">
-									{slide.buttonText2}
-									<Image
-										className="group-hover:translate-x-1 transition"
-										src={assets.arrow_icon}
-										alt="arrow_icon"
-									/>
-								</button>
-							</div>
+						<div className="relative w-[100vw] flex-shrink-0 h-[200px] sm:h-[300px] md:h-[400px] lg:h-[600px]">
+							{banner?.imgUrl ? (
+								<Image
+									src={banner.imgUrl}
+									alt={banner?.title || "banner"}
+									fill
+									className="object-cover"
+									quality={100}
+									priority
+								/>
+							) : (
+								<div className="w-full h-full bg-gray-200 flex items-center justify-center">
+									No image
+								</div>
+							)}
 						</div>
-						<div className="flex items-center flex-1 justify-center">
-							<Image
-								className="md:w-96"
-								src={slide.imgSrc}
-								alt={`Slide ${index + 1}`}
-							/>
-						</div>
-					</div>
+					</Link>
 				))}
 			</div>
 
-			<div className="flex items-center justify-center gap-2 mt-8">
-				{sliderData.map((_, index) => (
-					<div
-						key={index}
-						onClick={() => handleSlideChange(index)}
-						className={`h-2 w-2 rounded-full cursor-pointer ${
-							currentSlide === index ? "bg-orange-600" : "bg-gray-500/30"
+			{/* Slide Dots */}
+			<div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+				{banners.map((_, idx) => (
+					<button
+						key={idx}
+						onClick={() => setCurrentSlide(idx)}
+						className={`h-3 w-3 rounded-full transition-colors duration-300 ${
+							currentSlide === idx ? "bg-orange-600" : "bg-gray-400"
 						}`}
-					></div>
+					/>
 				))}
 			</div>
 		</div>

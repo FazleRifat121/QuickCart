@@ -10,6 +10,7 @@ const SideBar = () => {
 	const menuItems = [
 		{ name: "Add Product", path: "/seller", icon: assets.add_icon },
 		{ name: "Add-Promo", path: "/seller/add-promo", icon: assets.add_icon },
+		{ name: "Add-Banner", path: "/seller/add-banner", icon: assets.add_icon },
 		{
 			name: "Product List",
 			path: "/seller/product-list",
@@ -18,6 +19,11 @@ const SideBar = () => {
 		{
 			name: "Promo List",
 			path: "/seller/promos",
+			icon: assets.product_list_icon,
+		},
+		{
+			name: "Banner List",
+			path: "/seller/banner-list",
 			icon: assets.product_list_icon,
 		},
 		{ name: "Orders", path: "/seller/orders", icon: assets.order_icon },
