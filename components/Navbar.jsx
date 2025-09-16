@@ -244,11 +244,10 @@ const Navbar = () => {
 					</div>
 
 					{/* Mobile search */}
-					{/* Mobile search */}
 					{showMobileSearch && (
 						<div
 							ref={mobileSearchRef}
-							className="absolute top-12 -left-[245px] w-screen px-4 py-5 flex flex-col gap-2 z-50"
+							className="absolute top-12 -left-[220px] w-[300px] px-4 py-5 flex flex-col gap-2 z-50"
 						>
 							<input
 								type="text"
