@@ -18,7 +18,7 @@ const HeaderSlider = ({ banners }) => {
 
 	if (!banners || banners.length === 0) {
 		return (
-			<div className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-[600px] bg-gray-200 flex items-center justify-center rounded-lg">
+			<div className="w-full h-[200px] sm:h-[300px] md:h-[400px] lg:h-screen bg-gray-200 flex items-center justify-center rounded-lg">
 				No banners
 			</div>
 		);
@@ -40,7 +40,7 @@ const HeaderSlider = ({ banners }) => {
 								: "/all-products"
 						}
 					>
-						<div className="relative w-[100vw] flex-shrink-0 h-[200px] sm:h-[300px] md:h-[400px] lg:h-[800px]">
+						<div className="relative w-[100vw] flex-shrink-0 h-[200px] sm:h-[300px] md:h-[400px] lg:h-screen">
 							{banner?.imgUrl ? (
 								<Image
 									src={banner.imgUrl}
@@ -59,8 +59,7 @@ const HeaderSlider = ({ banners }) => {
 					</Link>
 				))}
 			</div>
-
-			{/* Slide Dots */}
+			{/* Slide Dots
 			<div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
 				{banners.map((_, idx) => (
 					<button
@@ -71,7 +70,7 @@ const HeaderSlider = ({ banners }) => {
 						}`}
 					/>
 				))}
-			</div>
+			</div> */}
 		</div>
 	);
 };

@@ -25,6 +25,14 @@ const AddAddress = () => {
 
 	const onSubmitHandler = async (e) => {
 		e.preventDefault();
+
+		// Phone validation (Bangladeshi only)
+		const bdPhoneRegex = /^01[3-9]\d{8}$/;
+		if (!bdPhoneRegex.test(address.phoneNumber)) {
+			toast.error("Please enter a valid Bangladeshi phone number");
+			return;
+		}
+
 		try {
 			const token = await getToken();
 			const { data } = await axios.post(

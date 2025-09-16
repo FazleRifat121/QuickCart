@@ -15,15 +15,20 @@ import Footer from "@/components/Footer";
 const Home = () => {
 	const [showContent, setShowContent] = useState(false);
 	const [banners, setBanners] = useState([]);
+	const [isScrolled, setIsScrolled] = useState(false);
 
-	// Fetch banners from API
+	useEffect(() => {
+		const handleScroll = () => setIsScrolled(window.scrollY > 50);
+		window.addEventListener("scroll", handleScroll);
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
+
 	useEffect(() => {
 		const fetchBanners = async () => {
 			try {
 				const { data } = await axios.get("/api/banners");
-				if (data.success && Array.isArray(data.banners)) {
+				if (data.success && Array.isArray(data.banners))
 					setBanners(data.banners);
-				}
 			} catch (err) {
 				console.error("Failed to fetch banners:", err);
 			}
@@ -41,11 +46,10 @@ const Home = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 1, ease: "easeOut" }}
 				>
-					<Navbar />
+					<Navbar isScrolled={isScrolled} fixed={true} />
 					<HeaderSlider banners={banners} />
-					<div className="px-6 md:px-16 lg:px-32">
-						{/* Pass banners here */}
 
+					<div className="px-6 md:px-16 lg:px-32">
 						<HomeProducts />
 						<FeaturedProduct />
 						<Banner />

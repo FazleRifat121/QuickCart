@@ -76,7 +76,7 @@ const AllProducts = () => {
 				{!isDesktop && (
 					<button
 						onClick={() => setShowFilters(!showFilters)}
-						className="px-4 py-2 bg-orange-600 text-white rounded mb-4"
+						className="px-4 py-2 bg-white text-gray-600 border rounded mb-4"
 					>
 						{showFilters ? "Hide Filters" : "Show Filters"}
 					</button>

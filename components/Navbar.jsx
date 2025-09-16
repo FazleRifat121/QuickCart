@@ -6,40 +6,49 @@ import { useAppContext } from "@/context/AppContext";
 import { useClerk, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { FaFacebookSquare, FaInstagram } from "react-icons/fa";
 
 const Navbar = () => {
 	const { isSeller, user, wishlist, cartItems, orders } = useAppContext();
 	const router = useRouter();
+	const pathname = usePathname();
 	const { openSignIn } = useClerk();
 
 	const wishlistCount = Array.isArray(wishlist) ? wishlist.length : 0;
 	const cartCount = cartItems
 		? Object.values(cartItems).reduce((sum, q) => sum + q, 0)
 		: 0;
-
 	const [orderCount, setOrderCount] = useState(orders ? orders.length : 0);
+
 	const [mounted, setMounted] = useState(false);
 	const [showMobileMenu, setShowMobileMenu] = useState(false);
 	const [showMobileSearch, setShowMobileSearch] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState([]);
+	const [isScrolled, setIsScrolled] = useState(false);
 
 	const mobileSearchRef = useRef(null);
 
-	// mark as mounted
-	useEffect(() => {
-		setMounted(true);
-	}, []);
+	useEffect(() => setMounted(true), []);
 
-	// update order count if orders change
+	// Navbar scroll effect for Home page
 	useEffect(() => {
-		setOrderCount(orders ? orders.length : 0);
-	}, [orders]);
+		if (pathname === "/") {
+			const handleScroll = () => setIsScrolled(window.scrollY > 50);
+			window.addEventListener("scroll", handleScroll);
+			return () => window.removeEventListener("scroll", handleScroll);
+		} else {
+			setIsScrolled(true);
+		}
+	}, [pathname]);
 
-	// close search if clicking outside
+	// Update order count
+	useEffect(() => setOrderCount(orders ? orders.length : 0), [orders]);
+
+	// Close mobile search when clicking outside
 	useEffect(() => {
 		const handleClickOutside = (e) => {
 			if (
@@ -51,15 +60,12 @@ const Navbar = () => {
 				setSearchResults([]);
 			}
 		};
-		if (showMobileSearch) {
+		if (showMobileSearch)
 			document.addEventListener("mousedown", handleClickOutside);
-		}
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
+		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [showMobileSearch]);
 
-	// search as you type
+	// Live search
 	const handleSearchChange = async (e) => {
 		const query = e.target.value;
 		setSearchQuery(query);
@@ -75,6 +81,7 @@ const Navbar = () => {
 		}
 	};
 
+	// Submit search
 	const handleSearchSubmit = (e) => {
 		e.preventDefault();
 		if (!searchQuery) return;
@@ -85,13 +92,19 @@ const Navbar = () => {
 		setShowMobileSearch(false);
 	};
 
-	// render placeholder while mounting
-	if (!mounted) {
-		return <nav className="h-16 border-b border-gray-300"></nav>;
-	}
+	if (!mounted) return <nav className="h-16"></nav>;
+
+	const navbarClasses = `flex flex-col md:flex-row items-center justify-between px-6 md:px-16 lg:px-32 py-3 transition-colors duration-300 w-full top-0 left-0 z-50 ${
+		pathname === "/"
+			? "fixed " +
+			  (isScrolled
+					? "bg-white text-gray-700 border-b border-gray-300 shadow-md"
+					: "bg-transparent text-white")
+			: "relative bg-white text-gray-700"
+	}`;
 
 	return (
-		<nav className="flex flex-col md:flex-row items-center justify-between px-6 md:px-16 lg:px-32 py-3 border-b border-gray-300 text-gray-700 relative">
+		<nav className={navbarClasses}>
 			{/* Logo */}
 			<div className="flex items-center justify-between w-full md:w-auto">
 				<Image
@@ -108,14 +121,10 @@ const Navbar = () => {
 						<Image src={assets.search_icon} alt="search" className="w-5 h-5" />
 					</button>
 
-					{/* User button (mobile only) */}
+					{/* User */}
 					{user ? (
 						<UserButton
-							appearance={{
-								elements: {
-									userButtonPopoverCard: "ml-4 mt-2",
-								},
-							}}
+							appearance={{ elements: { userButtonPopoverCard: "ml-4 mt-2" } }}
 						>
 							<UserButton.MenuItems className="absolute top-full right-0 mt-2 w-64 flex flex-col gap-2 bg-white shadow-lg rounded z-50">
 								<UserButton.Action
@@ -162,7 +171,7 @@ const Navbar = () => {
 						</button>
 					)}
 
-					{/* Hamburger button */}
+					{/* Hamburger */}
 					<button
 						onClick={() => setShowMobileMenu((prev) => !prev)}
 						className="flex flex-col justify-between w-6 h-5 ml-2"
@@ -172,14 +181,14 @@ const Navbar = () => {
 						<span className="block h-0.5 w-full bg-gray-700"></span>
 					</button>
 
-					{/* Slide-out menu */}
+					{/* Mobile menu */}
 					<div
 						className={`fixed top-0 right-0 w-64 h-full bg-white shadow-lg z-50 p-6 flex flex-col gap-6 transform transition-transform duration-300 ${
 							showMobileMenu ? "translate-x-0" : "translate-x-full"
 						}`}
 					>
 						<button
-							className="self-end mb-4 text-xl font-bold"
+							className="self-end mb-4 text-xl font-bold text-gray-900"
 							onClick={() => setShowMobileMenu(false)}
 						>
 							✕
@@ -187,45 +196,66 @@ const Navbar = () => {
 						<Link
 							href="/"
 							onClick={() => setShowMobileMenu(false)}
-							className="hover:text-gray-900 text-lg"
+							className="text-gray-900 text-lg"
 						>
 							Home
 						</Link>
 						<Link
 							href="/all-products"
 							onClick={() => setShowMobileMenu(false)}
-							className="hover:text-gray-900 text-lg"
+							className="text-gray-900 text-lg"
 						>
 							Shop
 						</Link>
 						<Link
 							href="/about"
 							onClick={() => setShowMobileMenu(false)}
-							className="hover:text-gray-900 text-lg"
+							className="text-gray-900 text-lg"
 						>
 							About Us
 						</Link>
 						<Link
 							href="/contact"
 							onClick={() => setShowMobileMenu(false)}
-							className="hover:text-gray-900 text-lg"
+							className="text-gray-900 text-lg"
 						>
 							Contact
 						</Link>
+
+						{/* Social icons mobile */}
+						<div className="mt-auto flex gap-4">
+							<a
+								href="https://facebook.com/yourpage"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-gray-700 hover:text-blue-600 transition"
+							>
+								<FaFacebookSquare size={25} />
+							</a>
+							<a
+								href="https://instagram.com/yourpage"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-gray-700 hover:text-pink-500 transition"
+							>
+								<FaInstagram size={25} />
+							</a>
+						</div>
 					</div>
 
-					{/* Mobile search bar */}
+					{/* Mobile search */}
+					{/* Mobile search */}
 					{showMobileSearch && (
 						<div
 							ref={mobileSearchRef}
-							className="absolute top-12 -left-64 w-screen px-4 py-5 flex flex-col gap-2 z-50"
+							className="absolute top-12 -left-[245px] w-screen px-4 py-5 flex flex-col gap-2 z-50"
 						>
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={handleSearchChange}
 								placeholder="Search products..."
-								className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+								className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
 							/>
 
 							{searchResults.length > 0 && (
@@ -233,7 +263,7 @@ const Navbar = () => {
 									{searchResults.map((product) => (
 										<div
 											key={product._id}
-											className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+											className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 text-black"
 											onClick={() => {
 												router.push(`/product/${product._id}`);
 												setSearchQuery("");
@@ -275,14 +305,18 @@ const Navbar = () => {
 
 				<form
 					onSubmit={handleSearchSubmit}
-					className="relative ml-4 flex items-center"
+					className="relative ml-4 flex flex-col"
 				>
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={handleSearchChange}
 						placeholder="Search products..."
-						className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+						className={`w-64 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+							isScrolled
+								? "border border-gray-300 bg-white text-gray-700"
+								: "border border-transparent bg-transparent text-white"
+						}`}
 					/>
 					{searchResults.length > 0 && (
 						<div className="absolute top-10 bg-white border w-64 mt-1 max-h-64 overflow-y-auto rounded shadow z-50">
@@ -311,7 +345,7 @@ const Navbar = () => {
 				</form>
 			</div>
 
-			{/* Desktop user actions */}
+			{/* Desktop user + social */}
 			<div className="hidden md:flex items-center gap-4">
 				{user ? (
 					<UserButton>
@@ -355,6 +389,26 @@ const Navbar = () => {
 						Account
 					</button>
 				)}
+
+				{/* Desktop social icons */}
+				<div className="flex items-center gap-3 ml-4">
+					<a
+						href="https://facebook.com/yourpage"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-gray-700 hover:text-blue-600 transition"
+					>
+						<FaFacebookSquare size={25} />
+					</a>
+					<a
+						href="https://instagram.com/yourpage"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-gray-700 hover:text-pink-500 transition"
+					>
+						<FaInstagram size={25} />
+					</a>
+				</div>
 			</div>
 		</nav>
 	);

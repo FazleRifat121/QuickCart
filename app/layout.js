@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
+import GoToTopButton from "@/components/GoToTopButton";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
 
@@ -17,8 +18,10 @@ export default function RootLayout({ children }) {
 			<html lang="en">
 				<body className={`${outfit.className} antialiased text-gray-700`}>
 					<Toaster />
-					{/* AppContextProvider wraps children */}
-					<AppContextProvider>{children}</AppContextProvider>
+					<AppContextProvider>
+						{children}
+						<GoToTopButton /> {/* Go To Top Button added here */}
+					</AppContextProvider>
 				</body>
 			</html>
 		</ClerkProvider>
