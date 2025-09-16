@@ -33,7 +33,7 @@ const IntroAnimation = ({ onFinish }) => {
 			animate={{ y: "-100%" }}
 			transition={{ duration: 1.2, ease: "easeInOut", delay: 2 }}
 		>
-			<div className="flex text-6xl md:text-9xl font-extrabold tracking-widest">
+			<div className="flex text-5xl md:text-9xl font-extrabold tracking-widest">
 				{word.map((letter, i) => (
 					<motion.span
 						key={i}
