@@ -21,7 +21,7 @@ export default function GoToTopButton() {
 	return (
 		<button
 			onClick={scrollToTop}
-			className="fixed bottom-6 right-3 md:right-12 p-3 bg-orange-600 text-white border rounded-full shadow-lg hover:bg-gray-300  transition transform animate-bounce z-50"
+			className="fixed bottom-6 right-3 md:right-12 p-3 bg-orange-600 text-white border rounded-full shadow-lg hover:bg-orange-400  transition transform animate-bounce z-50"
 			aria-label="Go to top"
 		>
 			<FaArrowUp size={20} />
