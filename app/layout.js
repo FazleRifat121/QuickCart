@@ -4,6 +4,7 @@ import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "react-hot-toast";
 import { ClerkProvider } from "@clerk/nextjs";
 import GoToTopButton from "@/components/GoToTopButton";
+import WhatsAppButton from "@/components/WhatsAppButton"; // Create a client component for WhatsApp
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500"] });
 
@@ -20,7 +21,8 @@ export default function RootLayout({ children }) {
 					<Toaster />
 					<AppContextProvider>
 						{children}
-						<GoToTopButton /> {/* Go To Top Button added here */}
+						<GoToTopButton />
+						<WhatsAppButton /> {/* Only this is client-side */}
 					</AppContextProvider>
 				</body>
 			</html>
