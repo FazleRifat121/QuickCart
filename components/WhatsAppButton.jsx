@@ -23,7 +23,7 @@ export default function WhatsAppButton() {
 			} bg-orange-600 hover:pr-8 text-white p-2 text-2xl cursor-pointer transition-all duration-300 rounded-l-md z-50`}
 		>
 			<Link
-				href="https://wa.me/8801722080196"
+				href="https://wa.me/8801123456789"
 				target="_blank"
 				rel="noopener noreferrer"
 			>
