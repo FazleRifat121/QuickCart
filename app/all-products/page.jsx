@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAppContext } from "@/context/AppContext";
 
 const categories = ["Three Piece", "Lawn", "Salwar Kameez", "Kurti", "Silk"];
 const sizes = ["S", "M", "L", "XL"];
@@ -35,11 +34,10 @@ const sortingOptions = [
 ];
 
 const AllProducts = () => {
-	const { products } = useAppContext();
-
+	const [products, setProducts] = useState([]);
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [filters, setFilters] = useState({ size: "", color: "" });
-	const [sortBy, setSortBy] = useState("");
+	const [sortBy, setSortBy] = useState("Popularity");
 	const [showFilters, setShowFilters] = useState(false);
 	const [isDesktop, setIsDesktop] = useState(false);
 
@@ -55,6 +53,15 @@ const AllProducts = () => {
 		setFilters((prev) => ({ ...prev, [filterName]: value }));
 	};
 
+	// Fetch products sorted by most ordered
+	useEffect(() => {
+		fetch("/api/product/popularity")
+			.then((res) => res.json())
+			.then((data) => {
+				if (data.success) setProducts(data.products);
+			});
+	}, []);
+
 	// Filter & sort products
 	const filteredProducts = products
 		.filter((p) => !selectedCategory || p.category === selectedCategory)
@@ -63,8 +70,9 @@ const AllProducts = () => {
 		.sort((a, b) => {
 			if (sortBy === "Price: Low to High") return a.offerPrice - b.offerPrice;
 			if (sortBy === "Price: High to Low") return b.offerPrice - a.offerPrice;
-			if (sortBy === "New Arrivals") return b.date - a.date; // ✅ sort by timestamp
-			if (sortBy === "Popularity") return b.popularity - a.popularity; // ✅ sort by popularity
+			if (sortBy === "New Arrivals") return b.date - a.date;
+			if (sortBy === "Popularity")
+				return (b.orderCount || 0) - (a.orderCount || 0);
 			return 0;
 		});
 
@@ -72,7 +80,6 @@ const AllProducts = () => {
 		<>
 			<Navbar />
 			<div className="px-6 md:px-16 lg:px-32 mt-12">
-				{/* Mobile toggle button */}
 				{!isDesktop && (
 					<button
 						onClick={() => setShowFilters(!showFilters)}
@@ -83,7 +90,6 @@ const AllProducts = () => {
 				)}
 
 				<div className="flex flex-col md:flex-row gap-6">
-					{/* Sidebar filters */}
 					{(showFilters || isDesktop) && (
 						<aside className="w-full md:w-64 flex-shrink-0 border p-4 rounded bg-gray-50">
 							{/* Categories */}
@@ -179,7 +185,7 @@ const AllProducts = () => {
 						</aside>
 					)}
 
-					{/* Products grid */}
+					{/* Products Grid */}
 					<div className="flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
 						{filteredProducts.length === 0 ? (
 							<p className="col-span-full text-center mt-10">
